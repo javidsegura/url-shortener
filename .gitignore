@@ -1,0 +1,34 @@
+*.env*
+url-shortener-abadb-firebase-adminsdk-fbsvc-52980dc022.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.venv/
+venv/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Builds and coverage
+dist/
+build/
+coverage/
+
+# Logs
+*.log

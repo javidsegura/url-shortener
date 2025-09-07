@@ -1,0 +1,64 @@
+# Nginx server (added later), redis, db (added later)
+services:
+  redis:
+    image: redis:7.2-alpine
+    ports: 
+      - "6379:6379"
+    volumes: 
+      - redis-data:/data
+  database: # REMOVE IN PRODUCTION
+    image: mysql:8.0
+    volumes:
+      - db-data:/var/lib/mysql
+    ports: 
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: JavierCCAT2305-
+      MYSQL_DATABASE: url_shortener
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pJavierCCAT2305-"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  db-migration:
+     image: javidsegura/url_shortener_backend
+     command: ["sh", "-c", " alembic upgrade head && alembic current"]
+     working_dir: /app
+     env_file:
+       - ${BACKEND_ENV_FILE}
+     restart: "no"
+     depends_on:
+       database:
+        condition: service_healthy
+  backend:
+    image: javidsegura/url_shortener_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ${BACKEND_ENV_FILE}
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT}
+    # healthcheck: => ACTIVATE IN PRODUCTION
+    #   test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+    #   interval: 30s
+    #   timeout: 5s
+    #   retries: 1
+    #   start_period: 5s
+    depends_on:
+      - db-migration
+    
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  redis-data:
+  db-data:
