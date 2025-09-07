@@ -39,6 +39,7 @@ module "ec2" {
   public_subnet_id = module.vpc.public_subnet_id
   web_app_sg_id = module.vpc.web_app_sg_id
   ssh_key_local_path = var.ssh_key_local_path
+  aws_s3_web_arn = module.s3.s3_bucket_arn
 
 }
 

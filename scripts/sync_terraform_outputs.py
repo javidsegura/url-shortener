@@ -57,6 +57,7 @@ def write_env_file(outputs, env_file_path):
         # Escape quotes in values
         env_value = env_value.replace('"', '\\"')
         env_key = env_key.replace("BACKEND_", "")
+        env_key = env_key.replace("API_", "")
         env_lines.append(f'{env_key}="{env_value}"')
     
     # Write to file
