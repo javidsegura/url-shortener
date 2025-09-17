@@ -10,8 +10,8 @@ RESET = \033[0m
 .DEFAULT_GOAL := help
 
 BACKEND_ENV_FILE_BASE_PATH = ../backend/.env.$(ENVIRONMENT).base
-BACKEND_ENV_FILE_SYNCED_PATH = ../backend/.env.$(ENVIRONMENT).synced # CAN THIS BE DELETEED?
-FRONTEND_ENV_FILE = ../frontend/app/.env.$(ENVIRONMENT) 
+FRONTEND_ENV_FILE_BASE_PATH = ../frontend/app/.env.$(ENVIRONMENT).base
+
 ANSIBLE_INVENTORY_FILE = ./ansible/inventory/$(ENVIRONMENT).ini
 TERRAFORM_PATH=terraform/environment/$(ENVIRONMENT)
 SYNC_SCRIPT_PATH = scripts.injector
@@ -63,16 +63,16 @@ sync_backend_env: ## Inject tf outputs into backend dotenv
 	python3 -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_PATH) \
-	   --base-dotenv-path $(BACKEND_ENV_FILE_BASE_PATH)
+	   --backend-dotenv-path $(BACKEND_ENV_FILE_BASE_PATH)
 
-sync_frontend_env:
-	@echo "Syncing Terraform outputs to Ansible inventory..."
+sync_frontend_env:  ## Inject tf outputs into frontend dotenv
+	@echo "Syncing Terraform outputs to backend .env..."
 	$(MAKE) check_enviroment_variables
-	python3 $(SYNC_SCRIPT_PATH) \
-		--terraform-path $(TERRAFORM_PATH) \
-		--environment $(ENVIRONMENT) \
-		--frontend-env $(FRONTEND_ENV_FILE).synced \
-		--frontend-prefixes env_frontend_
+	python3 -m $(SYNC_SCRIPT_PATH) \
+	   --environment $(ENVIRONMENT) \
+	   --terraform-dir $(TERRAFORM_PATH) \
+	   --frontend-dotenv-path $(FRONTEND_ENV_FILE_BASE_PATH)
+
 
 sync_ansible_inventory:
 	@echo "Syncing Terraform outputs to Ansible inventory..."
