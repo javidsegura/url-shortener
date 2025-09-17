@@ -13,10 +13,10 @@ dependencies = [
       "sqlalchemy[asyncio]",
       "aiomysql",
       "cryptography",
+      "pymysql",
       "firebase-admin",
       "boto3",
       "alembic"
-
 ]
 
 [project.optional-dependencies]
@@ -24,6 +24,7 @@ dev = [
       "ruff",
       "bandit",
       "pre-commit",
+      "Jinja2"
 ]
 test = [
       "pytest",

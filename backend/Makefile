@@ -14,7 +14,6 @@ VENV = ../.venv
 VENV_ACTIVATE = source $(VENV)/bin/activate
 APP_PATH = src.main:app
 PORT = 8000
-ENVIRONMENT ?= dev
 
 
 help: ## Show this help message
@@ -29,10 +28,9 @@ install: ## Install backend dependencies
 	$(VENV_ACTIVATE) && alembic init migrations || echo "alembic init already started"
 
 # 1) Boot-up 
-# dev: ## Start backend development server
-# 	$(VENV_ACTIVATE) &&  ENVIRONMENT=dev uvicorn $(APP_PATH) --reload --host 0.0.0.0 --port $(PORT)
+dev: ## Start backend development server
+	$(VENV_ACTIVATE) &&  ENVIRONMENT=dev uvicorn $(APP_PATH) --reload --host 0.0.0.0 --port $(PORT)
 	
-
 
 # 2) CI
 lint: ## Run linting and formatting (local dev)
@@ -92,6 +90,14 @@ db-downgrade-specific-version:
 
 
 push_docker: ## MOVE ME TO BAckend
+	$(MAKE) check_enviroment_variables
 	docker login
-	docker buildx build -t javidsegura/url_shortener_backend --platform linux/amd64,linux/arm64 --push -f ./Dockerfile ./
+	docker buildx build -t javidsegura/url_shortener_backend:$(ENVIRONMENT) --platform linux/amd64,linux/arm64 --push -f ./Dockerfile ./
 
+
+check_enviroment_variables:
+	@if [ -z "$$ENVIRONMENT" ]; then \
+		echo "Error: ENVIRONMENT must be defined"; \
+		exit 1; \
+	fi
+	echo "Environment is: $(ENVIRONMENT)"

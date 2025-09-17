@@ -70,7 +70,8 @@ resource "aws_iam_instance_profile" "web_app_profile" {
   role = aws_iam_role.app_server_s3_permissions.name
 }
 
-# Policy defining S3 permissions
+# == POLICIES ==
+# A) Policy defining S3 permissions
 data "aws_iam_policy_document" "s3_access_policy" {
   statement {
     sid = "S3ReadAndPut"
@@ -82,15 +83,36 @@ data "aws_iam_policy_document" "s3_access_policy" {
   }
 }
 
-# IAM Policy for S3 access
 resource "aws_iam_policy" "s3_read_put_policy" {
   name        = "S3_Read_Put_Policy"
   description = "A policy that allows S3 read and put access."
   policy      = data.aws_iam_policy_document.s3_access_policy.json
 }
 
-# Attaching the S3 policy to the IAM Role
 resource "aws_iam_role_policy_attachment" "s3_attachment" {
   role       = aws_iam_role.app_server_s3_permissions.name
   policy_arn = aws_iam_policy.s3_read_put_policy.arn
+}
+
+# B) Secret manager
+data "aws_iam_policy_document" "secret_manager_access_policy" {
+  statement {
+    sid = "SecretsManagerAccessSecret"
+    actions = [
+      "secretsmanager:GetSecretValue"
+    ]
+    resources = ["${var.aws_secretsmanager_database_crentials_arn}"]
+  }
+}
+
+resource "aws_iam_policy" "get_secret_value" {
+  name        = "Secrets_manager_get_secret_value"
+  description = "Policy that allows getting secret values from Secrets Manager"
+  policy      = data.aws_iam_policy_document.secret_manager_access_policy.json
+}
+
+# Attaching the secrets manager policy to the IAM Role
+resource "aws_iam_role_policy_attachment" "secrets_manager_attachment" {
+  role       = aws_iam_role.app_server_s3_permissions.name
+  policy_arn = aws_iam_policy.get_secret_value.arn
 }

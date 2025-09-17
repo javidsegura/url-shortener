@@ -13,3 +13,10 @@ variable "ssh_key_local_path" {
 variable "db_username" {
   type = string
 }
+variable "instance_type_web_app" {
+  type = string
+}
+variable "instance_type_bastion" {
+  type = string
+}
+

@@ -9,63 +9,79 @@ RESET = \033[0m
 
 .DEFAULT_GOAL := help
 
-ENVIRONMENT ?= dev
-BACKEND_ENV_FILE = ../backend/.env.$(ENVIRONMENT)
-FRONTEND_ENV_FILE = ../frontend/app/.env.$(ENVIRONMENT)
+BACKEND_ENV_FILE_BASE_PATH = ../backend/.env.$(ENVIRONMENT).base
+BACKEND_ENV_FILE_SYNCED_PATH = ../backend/.env.$(ENVIRONMENT).synced # CAN THIS BE DELETEED?
+FRONTEND_ENV_FILE = ../frontend/app/.env.$(ENVIRONMENT) 
 ANSIBLE_INVENTORY_FILE = ./ansible/inventory/$(ENVIRONMENT).ini
 TERRAFORM_PATH=terraform/environment/$(ENVIRONMENT)
-SYNC_SCRIPT_PATH = ../scripts/sync_terraform_outputs.py
+SYNC_SCRIPT_PATH = scripts.injector
 
 help: ## Show this help message
 	@echo "$(BLUE)Available commands:$(RESET)"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(GREEN)%-15s$(RESET) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 install: ## Initialize Terraform
+	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_PATH) && terraform init
 	brew install ansible
 	ansible-galaxy collection install community.docker
 
+check: ## Apply Terraform configuration
+	$(MAKE) check_enviroment_variables
+	cd $(TERRAFORM_PATH) && terraform plan
+
+output:
+	$(MAKE) check_enviroment_variables
+	cd $(TERRAFORM_PATH) && terraform output 
+output-json:
+	$(MAKE) check_enviroment_variables
+	cd $(TERRAFORM_PATH) && terraform output -json
+
 up: ## Apply Terraform configuration
-	@echo "Environment is $(ENVIRONMENT)"
+	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_PATH) && terraform apply
 
 down: ## Apply Terraform configuration
-	@echo "Environment is $(ENVIRONMENT)"
+	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_PATH) && terraform destroy
 
-output:
-	cd $(TERRAFORM_PATH) && terraform output -json
 
 ansible-ping:
+	$(MAKE) check_enviroment_variables
 	ansible all -m ping -i ./ansible/inventory/$(ENVIRONMENT).ini
 
 ansible-up:
 	ansible-playbook ./ansible/playbook/multi-container.yml -i ./ansible/inventory/$(ENVIRONMENT).ini 
 
-sync_backend_env: 
+terraform-check:
+	cd $(TERRAFORM_PATH) && terraform plan
+
+
+sync_backend_env: ## Inject tf outputs into backend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."
-	cp $(BACKEND_ENV_FILE) $(BACKEND_ENV_FILE).synced
-	python3 $(SYNC_SCRIPT_PATH) \
-	   --terraform-path $(TERRAFORM_PATH) \
+	$(MAKE) check_enviroment_variables
+	python3 -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
-	   --backend-env $(BACKEND_ENV_FILE).synced \
-	   --backend-prefixes api_ backend_
+	   --terraform-dir $(TERRAFORM_PATH) \
+	   --base-dotenv-path $(BACKEND_ENV_FILE_BASE_PATH)
 
 sync_frontend_env:
 	@echo "Syncing Terraform outputs to Ansible inventory..."
+	$(MAKE) check_enviroment_variables
 	python3 $(SYNC_SCRIPT_PATH) \
 		--terraform-path $(TERRAFORM_PATH) \
 		--environment $(ENVIRONMENT) \
 		--frontend-env $(FRONTEND_ENV_FILE).synced \
-		--frontend-prefixes server_ frontend_
+		--frontend-prefixes env_frontend_
 
 sync_ansible_inventory:
 	@echo "Syncing Terraform outputs to Ansible inventory..."
+	$(MAKE) check_enviroment_variables
 	python3 $(SYNC_SCRIPT_PATH) \
 		--terraform-path $(TERRAFORM_PATH) \
 		--environment $(ENVIRONMENT) \
 		--ansible-inventory $(ANSIBLE_INVENTORY_FILE) \
-		--ansible-prefixes ssh_ server_ ansible_
+		--ansible-prefixes ansible_
 
 
 sync_envs:
@@ -76,4 +92,9 @@ sync_all:
 	$(MAKE) sync_envs
 	$(MAKE) sync_ansible_inventory
 
-
+check_enviroment_variables:
+	@if [ -z "$$ENVIRONMENT" ]; then \
+		echo "Error: ENVIRONMENT must be defined"; \
+		exit 1; \
+	fi
+	echo "Environment is: $(ENVIRONMENT)"

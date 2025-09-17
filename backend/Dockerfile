@@ -12,6 +12,7 @@ RUN pip3 install --no-cache-dir .
 
 
 COPY ./alembic.ini ./
+COPY ./scripts ./scripts
 
 EXPOSE 8000
 

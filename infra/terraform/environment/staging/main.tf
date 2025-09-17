@@ -36,12 +36,22 @@ module "vpc" {
 module "ec2" {
   source = "./modules/ec2"
 
+  # VPC
+  ## SUBNETS
   public_subnet_id = module.vpc.public_subnet_id
+  private_subnet_sever_id = module.vpc.private_subnet_server_id
+  ## SG
   web_app_sg_id = module.vpc.web_app_sg_id
+  bastion_sg_id = module.vpc.bastion_sg_id
+  # SSH
   ssh_key_local_path = var.ssh_key_local_path
+  # S3
   aws_s3_web_arn = module.s3.s3_bucket_arn
+  # SECRETS
   aws_secretsmanager_database_crentials_arn = module.rds.aws_secretsmanager_database_crentials_arn
-
+  # EC2
+  instance_type_bastion = var.instance_type_bastion
+  instance_type_web_app = var.instance_type_web_app
 
 }
 
@@ -49,8 +59,8 @@ module "rds" {
   source = "../../modules/rds"
 
   db_username = var.db_username
-  database_sg_id = module.vpc.database_sg_id
-  private_subnet_groups_name = module.vpc.private_subnet_groups_name
+  database_sg_id = module.vpc.db_sg_id
+  private_subnet_groups_name = module.vpc.private_db_subnet_groups_name
 
 }
 

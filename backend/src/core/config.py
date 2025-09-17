@@ -1,6 +1,7 @@
 import os
 
 from dotenv import load_dotenv
+from core import fetch_secret
 
 class Settings:
 	"""Application settings loaded from environment variables."""
@@ -8,19 +9,29 @@ class Settings:
 	def __init__(self):
 		ENVIRONMENT = os.getenv("ENVIRONMENT", "dev").lower()
 
+		print(f"ENVIRONMENT IS: {ENVIRONMENT}")
+
 		if "dev" in ENVIRONMENT:
 			load_dotenv(f".env.dev.synced")
 			print(f"Just loaded file via dotenv")
 
 		# Database configuration
 		self.REDIS_URL = os.getenv("REDIS_URL")
-		self.MYSQL_USER = os.getenv("MYSQL_USER")
-		self.MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
-		self.MYSQL_HOST = os.getenv("MYSQL_HOST")
 		self.MYSQL_PORT = os.getenv("MYSQL_PORT")
 		self.MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
 		self.MYSQL_SYNC_DRIVER = os.getenv("MYSQL_SYNC_DRIVER")
 		self.MYSQL_ASYNC_DRIVER = os.getenv("MYSQL_ASYNC_DRIVER")
+		self.MYSQL_HOST = os.getenv("MYSQL_HOST")
+		if "dev" not in ENVIRONMENT:
+			secret_key = os.getenv("DB_CREDENTIALS_KEY")
+			print("Secret key is: ", secret_key)
+			db_credentials = fetch_secret(secret_key=secret_key)
+			print(f"DB credentials is: {db_credentials}")
+			self.MYSQL_USER = db_credentials["username"]
+			self.MYSQL_PASSWORD = db_credentials["password"]
+		else:
+			self.MYSQL_USER = os.getenv("MYSQL_USER")
+			self.MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
 		
 		# S3 configuration
 		self.S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")

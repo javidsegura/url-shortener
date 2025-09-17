@@ -1,1 +1,1 @@
-from .clients import s3_client
+from .clients import *

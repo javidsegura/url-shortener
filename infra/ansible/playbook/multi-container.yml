@@ -1,5 +1,5 @@
 - name: Docker compose launch
-  hosts: webservers
+  hosts: web_servers
   become: yes
 
   vars:
