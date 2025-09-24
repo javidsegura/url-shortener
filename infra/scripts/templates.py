@@ -31,9 +31,7 @@ ORGANIZATION PROCESS:
 
 
 ENV_TEMPLATE = """
-
-# INJECT VARIABLES FROM TF
 {% for key, output in outputs.items() %}
-{{ key.upper() }}={{ output.value }}
+{{ key.upper() }}={{ output }}
 {% endfor %}
 """.strip()

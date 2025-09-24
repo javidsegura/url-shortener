@@ -8,13 +8,14 @@ import os
 import argparse
 import subprocess
 from tkinter import Variable
-from typing import Dict
+from typing import Any, Dict
 import json 
 
 from jinja2 import Template
+from pydantic import BaseModel
 from .templates import ENV_TEMPLATE
 import shutil
-
+from .extractor import Extractor
 
 class VariableInjector():
       """
@@ -24,18 +25,9 @@ class VariableInjector():
       def __init__(self, environment: str, terraform_dir: str) -> None:
             self.environment = environment
             self.terraform_dir = terraform_dir
-            self.terraform_outputs : Dict = self._extract_outputs()
+            self.terraform_outputs : Dict = Extractor(environment=self.environment)._extract_outputs()
 
-      def _extract_outputs(self):
-            output = subprocess.run(
-                  ["terraform", "output",  "-json"],
-                  cwd=self.terraform_dir,
-                  check=True,
-                  text=True,
-                  capture_output=True
-            )
-            return json.loads(output.stdout)
-      
+
       def _write_injection(self, file_name: str, content: str, file_mode: str = "w"):
             """
             Args:
@@ -51,7 +43,6 @@ class VariableInjector():
             if not os.path.exists(base_env_path):
                   raise Exception(f"base env path {base_env_path} doesnt exist")
             synced_file_path = base_env_path.replace("/base/", "/synced/")
-            print(f"Synced file path is: {synced_file_path}")
             shutil.copy(base_env_path, synced_file_path)
             return synced_file_path
 
@@ -69,8 +60,10 @@ class VariableInjector():
 
             # Create copy of base file
             synced_file_path = self._create_copy_of_base_file(base_env_path=base_env_path)
+            backend_outputs = self.terraform_outputs.get("backend")
 
-            synced_content = template.render(outputs=self.terraform_outputs)
+            synced_content = template.render(outputs=backend_outputs)
+
             self._write_injection(
                                     file_name=synced_file_path, 
                                     content=synced_content, file_mode="a")
@@ -96,8 +89,6 @@ class VariableInjector():
 
 
 if __name__ == "__main__":
-      import os
-      print(f"Current path: {os.getcwd()}")
       parser = argparse.ArgumentParser(description="Generate configuration files based on terraform outputs")
       parser.add_argument("--environment", help="Takes on [staging, dev, prod]")
       parser.add_argument("--terraform-dir", help="Directory of tf --where terraform output -json will be executed")
