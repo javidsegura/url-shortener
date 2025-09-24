@@ -11,7 +11,7 @@ class Settings:
 
 		print(f"ENVIRONMENT IS: {ENVIRONMENT}")
 
-		if "dev" in ENVIRONMENT:
+		if "dev" in ENVIRONMENT: # Loading with dotenv if dev
 			load_dotenv(f".env.dev.synced")
 			print(f"Just loaded file via dotenv")
 
@@ -34,7 +34,7 @@ class Settings:
 			self.MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
 		
 		# S3 configuration
-		self.S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+		self.S3_BUCKET_NAME = os.getenv("S3_MAIN_BUCKET_NAME")
 		
 		# Application settings with defaults
 		self.SHORTENED_URL_LENGTH = int(os.getenv("SHORTENED_URL_LENGTH", "8"))

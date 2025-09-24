@@ -3,6 +3,7 @@ Improvments for this script:
       - Add modularity by implementing a factory design pattern
 """
 
+from multiprocessing import Value
 import os 
 import argparse
 import subprocess
@@ -40,11 +41,17 @@ class VariableInjector():
             Args:
                   file_name (str):  top-level relative
             """
+            if file_mode == "a":
+                  if not os.path.exists(file_name):
+                        raise ValueError(f"Path {file_name} doesnt exist. Cant append")
             with open(file=f"{file_name}", mode=file_mode) as f:
                   f.write(content)
       
       def _create_copy_of_base_file(self, base_env_path: str):
-            synced_file_path = base_env_path.replace("base", "synced")
+            if not os.path.exists(base_env_path):
+                  raise Exception(f"base env path {base_env_path} doesnt exist")
+            synced_file_path = base_env_path.replace("/base/", "/synced/")
+            print(f"Synced file path is: {synced_file_path}")
             shutil.copy(base_env_path, synced_file_path)
             return synced_file_path
 
@@ -73,7 +80,11 @@ class VariableInjector():
 
             if self.environment == "dev":
                   synced_file_path = self._create_copy_of_base_file(base_env_path=base_env_path)
-                  self._write_injection(file_name=synced_file_path, content='VITE_BASE_URL="http://localhost/api/"', file_mode="a")
+                  sycned_content = template.render(outputs={"VITE_BASE_URL": 
+                                                                              {"value":"http://localhost/api/"}})
+                  self._write_injection(file_name=synced_file_path,
+                                        content=sycned_content, 
+                                        file_mode="a")
             elif self.environment == "production":
                   ...
 
@@ -85,6 +96,8 @@ class VariableInjector():
 
 
 if __name__ == "__main__":
+      import os
+      print(f"Current path: {os.getcwd()}")
       parser = argparse.ArgumentParser(description="Generate configuration files based on terraform outputs")
       parser.add_argument("--environment", help="Takes on [staging, dev, prod]")
       parser.add_argument("--terraform-dir", help="Directory of tf --where terraform output -json will be executed")

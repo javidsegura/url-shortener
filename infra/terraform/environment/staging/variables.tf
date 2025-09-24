@@ -6,6 +6,10 @@ variable "environment" {
   type = string
 }
 
+variable "project_name" {
+  type = string
+}
+
 variable "ssh_key_local_path" {
   type = string
 }

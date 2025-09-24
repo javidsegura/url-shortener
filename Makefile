@@ -9,7 +9,8 @@ YELLOW = \033[33m
 BLUE = \033[34m
 RESET = \033[0m
 
-BACKEND_ENV_FILE_SYNCED_PATH = ./backend/.env.$(ENVIRONMENT).synced
+BACKEND_ENV_FILE_SYNCED_PATH = ./backend/env_config/dotenvs/synced/.env.$(ENVIRONMENT)
+FROTNEND_ENV_FILE_SYNCED_PATH = ./frontend/env_config/dotenvs/synced/.env.$(ENVIRONMENT)
 TERRAFORM_PATH = ./infra/terraform/environment/$(ENVIRONMENT)
 PROJECT_NAME = url-shortener
 
@@ -34,7 +35,7 @@ install-packages: ## Install only packages
 
 dev-start: ## Hot reload enabled
 	$(MAKE) check_enviroment_variables
-	$(MAKE) -C infra up ENVIRONMENT=dev
+	$(MAKE) -C infra terraform-start
 	$(MAKE) -C infra sync_envs
 	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f docker-compose.yml -f docker-compose.dev.yml -p $(PROJECT_NAME) up --build &
 	$(MAKE) -C frontend dev &
@@ -51,7 +52,7 @@ dev-stop: ## Stop development environment
 dev-destroy-infra:
 	$(MAKE) check_enviroment_variables
 	@echo "$(YELLOW)Stopping development environment...$(RESET)"
-	$(MAKE) -C infra down ENVIRONMENT="$(ENVIRONMENT)" 
+	$(MAKE) -C infra terraform-start 
 
 
 deploy-start: ## ups infra for prod and stagin
@@ -83,6 +84,7 @@ stop-full-containerization: ## Stop development environment
 
 delete_ci_artifacts:
 	rm -rf $(BACKEND_ENV_FILE_SYNCED_PATH)
+	rm -rf $(FROTNEND_ENV_FILE_SYNCED_PATH)
 	docker volume prune -f
 
 

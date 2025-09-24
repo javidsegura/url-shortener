@@ -9,6 +9,7 @@ terraform {
   }
 }
 
+
 provider "aws" {
   region = var.main_region
 
@@ -18,6 +19,7 @@ provider "aws" {
     }
   }
 }
+
 
 module "s3" {
   source = "../../modules/s3"

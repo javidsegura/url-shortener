@@ -1,3 +1,5 @@
+# Naming convention: <service_name>_<group>_<name> 
+
 output "api_s3_bucket_name" {
   value = module.s3.s3_bucket_name
 }

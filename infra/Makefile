@@ -9,41 +9,47 @@ RESET = \033[0m
 
 .DEFAULT_GOAL := help
 
-BACKEND_ENV_FILE_BASE_PATH = ../backend/.env.$(ENVIRONMENT).base
-FRONTEND_ENV_FILE_BASE_PATH = ../frontend/app/.env.$(ENVIRONMENT).base
+BASE_BACKEND_ENV_FILE_PATH = ../backend/env_config/dotenvs/base/.env.$(ENVIRONMENT)
+BASE_FRONTEND_ENV_FILE_PATH = ../frontend/app/env_config/dotenvs/base/.env.$(ENVIRONMENT)
 
 ANSIBLE_INVENTORY_FILE = ./ansible/inventory/$(ENVIRONMENT).ini
-TERRAFORM_PATH=terraform/environment/$(ENVIRONMENT)
+TERRAFORM_ENVIRONMENT_PATH=terraform/environment/$(ENVIRONMENT)
+TERRAFORM_SET_UP_PATH=terraform/set-up
 SYNC_SCRIPT_PATH = scripts.injector
 
 help: ## Show this help message
 	@echo "$(BLUE)Available commands:$(RESET)"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(GREEN)%-15s$(RESET) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
+install-remote-state:
+	cd $(TERRAFORM_SET_UP_PATH) && terraform init && terraform apply 
+uninstall-remote-state:
+	cd $(TERRAFORM_SET_UP_PATH) && terraform destroy
+
 install: ## Initialize Terraform
 	$(MAKE) check_enviroment_variables
-	cd $(TERRAFORM_PATH) && terraform init
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform init
 	brew install ansible
 	ansible-galaxy collection install community.docker
 
 check: ## Apply Terraform configuration
 	$(MAKE) check_enviroment_variables
-	cd $(TERRAFORM_PATH) && terraform plan
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform plan
 
 output:
 	$(MAKE) check_enviroment_variables
-	cd $(TERRAFORM_PATH) && terraform output 
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform output 
 output-json:
 	$(MAKE) check_enviroment_variables
-	cd $(TERRAFORM_PATH) && terraform output -json
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform output -json
 
-up: ## Apply Terraform configuration
+terraform-start: ## Apply Terraform configuration
 	$(MAKE) check_enviroment_variables
-	cd $(TERRAFORM_PATH) && terraform apply
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform apply
 
-down: ## Apply Terraform configuration
+terraform-stop: ## Apply Terraform configuration
 	$(MAKE) check_enviroment_variables
-	cd $(TERRAFORM_PATH) && terraform destroy
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform destroy
 
 
 ansible-ping:
@@ -54,7 +60,7 @@ ansible-up:
 	ansible-playbook ./ansible/playbook/multi-container.yml -i ./ansible/inventory/$(ENVIRONMENT).ini 
 
 terraform-check:
-	cd $(TERRAFORM_PATH) && terraform plan
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform plan
 
 
 sync_backend_env: ## Inject tf outputs into backend dotenv
@@ -62,23 +68,23 @@ sync_backend_env: ## Inject tf outputs into backend dotenv
 	$(MAKE) check_enviroment_variables
 	python3 -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
-	   --terraform-dir $(TERRAFORM_PATH) \
-	   --backend-dotenv-path $(BACKEND_ENV_FILE_BASE_PATH)
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
+	   --backend-dotenv-path $(BASE_BACKEND_ENV_FILE_PATH)
 
 sync_frontend_env:  ## Inject tf outputs into frontend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."
 	$(MAKE) check_enviroment_variables
 	python3 -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
-	   --terraform-dir $(TERRAFORM_PATH) \
-	   --frontend-dotenv-path $(FRONTEND_ENV_FILE_BASE_PATH)
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
+	   --frontend-dotenv-path $(BASE_FRONTEND_ENV_FILE_PATH)
 
 
 sync_ansible_inventory:
 	@echo "Syncing Terraform outputs to Ansible inventory..."
 	$(MAKE) check_enviroment_variables
 	python3 $(SYNC_SCRIPT_PATH) \
-		--terraform-path $(TERRAFORM_PATH) \
+		--terraform-path $(TERRAFORM_ENVIRONMENT_PATH) \
 		--environment $(ENVIRONMENT) \
 		--ansible-inventory $(ANSIBLE_INVENTORY_FILE) \
 		--ansible-prefixes ansible_
