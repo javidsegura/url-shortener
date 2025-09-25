@@ -61,7 +61,7 @@ deploy-start: ## ups infra for prod and stagin
 	$(MAKE) -C infra sync_all ENVIRONMENT=$(ENVIRONMENT)
 	$(MAKE) -C frontend build
 	$(MAKE) -C backend push_docker
-	$(MAKE) -C infra ansible-up
+	$(MAKE) -C infra ansible-start
 
 deploy-stop: ## Stop development environment
 	@echo "$(YELLOW)Stopping development environment...$(RESET)"

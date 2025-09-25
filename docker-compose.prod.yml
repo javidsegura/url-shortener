@@ -12,5 +12,10 @@ services:
         condition: service_started
       backend:
         condition: service_started
+  backend:
+      image: javidsegura/url_shortener_backend:production  # Add :production tag
+  db-migration:
+      image: javidsegura/url_shortener_backend:production  # Add :production tag
+
 
       

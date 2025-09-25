@@ -56,12 +56,11 @@ ansible-ping: ## Check ansible connection is up
 	$(MAKE) check_enviroment_variables
 	ansible all -m ping -i ./ansible/inventory/$(ENVIRONMENT).ini
 
-ansible-up:
-	ansible-playbook ./ansible/playbook/multi-container.yml -i ./ansible/inventory/$(ENVIRONMENT).ini 
+ansible-start:
+	ansible-playbook ./ansible/playbook/multi-container.yml -i ./ansible/inventory/$(ENVIRONMENT).ini -e "stage_environment=production"
 
 terraform-check:
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform plan
-
 
 sync_backend_env: ## Inject tf outputs into backend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."

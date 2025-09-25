@@ -5,10 +5,12 @@
   vars:
     remote_project_path: "/opt/{{ project_name }}"
     project_name: "url-shortener"
-    environment: "production" # THIS SHOULD BE PASSED BY CLI
-    src_backend_env_synced_path: "../../../backend/env_config/synced/.env.{{ environment  }}"
-    dest_backend_env_synced_path: "{{ remote_project_path }}/backend/env_config/synced/.env.{{ environment }}"
+    src_backend_env_synced_path: "../../../backend/env_config/synced/.env.{{ stage_environment }}"
+    dest_backend_env_synced_path: "{{ remote_project_path }}/backend/env_config/synced/.env.{{ stage_environment }}"
   tasks:
+  - name: Show resolved paths
+    debug:
+      msg: "Source path is {{ src_backend_env_synced_path }} and destination path is {{ dest_backend_env_synced_path }}"
   - name: Ensure Docker and dependencies are installed
     ansible.builtin.dnf:
       name: 
@@ -50,6 +52,13 @@
   - name: Create backend directory
     ansible.builtin.file:
       path: "{{ remote_project_path }}/backend"
+      state: directory
+      owner: ec2-user
+      group: docker
+      mode: "0755"
+  - name: Create backend env_config directory structure
+    ansible.builtin.file:
+      path: "{{ remote_project_path }}/backend/env_config/synced"
       state: directory
       owner: ec2-user
       group: docker
@@ -107,6 +116,12 @@
       state: present
       extra_args: "--user"
     become_user: ec2-user
+
+  - name: Stop existing Docker Compose services
+    community.docker.docker_compose_v2:
+      project_src: "{{ remote_project_path }}"
+      project_name: "{{ project_name }}"
+      state: absent
     
   - name: Start and build Docker Compose Services
     community.docker.docker_compose_v2: 
@@ -117,7 +132,7 @@
       project_name: "{{ project_name }}"
       state: present
       pull: always 
-      recreate: auto
+      recreate: always
     environment:
       ENVIRONMENT: production
       BACKEND_ENV_FILE: "{{ dest_backend_env_synced_path }}"

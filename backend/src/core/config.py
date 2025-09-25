@@ -17,15 +17,19 @@ class Settings:
 		self.MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
 		self.MYSQL_SYNC_DRIVER = os.getenv("MYSQL_SYNC_DRIVER")
 		self.MYSQL_ASYNC_DRIVER = os.getenv("MYSQL_ASYNC_DRIVER")
-		self.MYSQL_HOST = os.getenv("MYSQL_HOST")
 		if "dev" not in ENVIRONMENT:
-			secret_key = os.getenv("DB_CREDENTIALS_KEY")
+			self.MYSQL_HOST = os.getenv("RDS_MYSQL_HOST")
+
+			secret_key = os.getenv("RDS_DB_CREDENTIALS_KEY")
+			if not secret_key:
+				raise ValueError("RDS db credentials key is needed!")
 			print("Secret key is: ", secret_key)
 			db_credentials = fetch_secret(secret_key=secret_key)
 			print(f"DB credentials is: {db_credentials}")
 			self.MYSQL_USER = db_credentials["username"]
 			self.MYSQL_PASSWORD = db_credentials["password"]
 		else:
+			self.MYSQL_HOST = os.getenv("MYSQL_HOST")
 			self.MYSQL_USER = os.getenv("MYSQL_USER")
 			self.MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
 		

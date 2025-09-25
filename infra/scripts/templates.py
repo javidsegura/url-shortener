@@ -40,6 +40,7 @@ ENV_TEMPLATE = """
 ANSIBLE_TEMPLATE_PRODUCTION = """
 [all:vars]
 ansible_ssh_private_key_file={{ outputs.EC2_APP_SERVER_SSH_PRIVATE_KEY_FILE_PATH }}
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 
 [web_servers]
 {{ outputs.EC2_APP_SERVER_PUBLIC_IP }} ansible_user={{ outputs.EC2_APP_SERVER_SSH_USER }}
