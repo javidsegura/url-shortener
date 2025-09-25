@@ -9,13 +9,13 @@ RESET = \033[0m
 
 .DEFAULT_GOAL := help
 
-BASE_BACKEND_ENV_FILE_PATH = ../backend/env_config/dotenvs/base/.env.$(ENVIRONMENT)
-BASE_FRONTEND_ENV_FILE_PATH = ../frontend/app/env_config/dotenvs/base/.env.$(ENVIRONMENT)
+BASE_BACKEND_ENV_FILE_PATH = ../backend/env_config/base/.env.$(ENVIRONMENT)
+BASE_FRONTEND_ENV_FILE_PATH = ../frontend/app/env_config/base/.env.$(ENVIRONMENT)
+ANSIBLE_INVENTORY_FILE_PATH = ./ansible/inventory/$(ENVIRONMENT).ini
 
-ANSIBLE_INVENTORY_FILE = ./ansible/inventory/$(ENVIRONMENT).ini
 TERRAFORM_ENVIRONMENT_PATH=terraform/environment/$(ENVIRONMENT)
 TERRAFORM_SET_UP_PATH=terraform/set-up
-SYNC_SCRIPT_PATH = scripts.injector
+SYNC_SCRIPT_PATH = scripts.main
 
 help: ## Show this help message
 	@echo "$(BLUE)Available commands:$(RESET)"
@@ -52,7 +52,7 @@ terraform-stop: ## Apply Terraform configuration
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform destroy
 
 
-ansible-ping:
+ansible-ping: ## Check ansible connection is up
 	$(MAKE) check_enviroment_variables
 	ansible all -m ping -i ./ansible/inventory/$(ENVIRONMENT).ini
 
@@ -83,11 +83,10 @@ sync_frontend_env:  ## Inject tf outputs into frontend dotenv
 sync_ansible_inventory:
 	@echo "Syncing Terraform outputs to Ansible inventory..."
 	$(MAKE) check_enviroment_variables
-	python3 $(SYNC_SCRIPT_PATH) \
-		--terraform-path $(TERRAFORM_ENVIRONMENT_PATH) \
-		--environment $(ENVIRONMENT) \
-		--ansible-inventory $(ANSIBLE_INVENTORY_FILE) \
-		--ansible-prefixes ansible_
+	python3 -m $(SYNC_SCRIPT_PATH) \
+	   --environment $(ENVIRONMENT) \
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
+	   --ansible-inventory-path $(ANSIBLE_INVENTORY_FILE_PATH)
 
 
 sync_envs:

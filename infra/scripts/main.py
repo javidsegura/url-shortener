@@ -8,14 +8,13 @@ import os
 import argparse
 import subprocess
 from tkinter import Variable
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 import json 
 
 from jinja2 import Template
 from pydantic import BaseModel
-from .templates import ENV_TEMPLATE
 import shutil
-from .extractor import Extractor
+from .utils import Extractor, BackendInjector, FrontendInjector, AnsibleInjector
 
 class VariableInjector():
       """
@@ -25,7 +24,10 @@ class VariableInjector():
       def __init__(self, environment: str, terraform_dir: str) -> None:
             self.environment = environment
             self.terraform_dir = terraform_dir
-            self.terraform_outputs : Dict = Extractor(environment=self.environment)._extract_outputs()
+            self.terraform_outputs : Dict(Dict, Dict, Dict) = Extractor(environment=self.environment, terraform_dir=self.terraform_dir)._extract_outputs()
+            self.backend_injector = BackendInjector(environment=self.environment)
+            self.frontend_injector = FrontendInjector(environment=self.environment)
+            self.ansible_injector = AnsibleInjector(environment=self.environment)
 
 
       def _write_injection(self, file_name: str, content: str, file_mode: str = "w"):
@@ -47,62 +49,53 @@ class VariableInjector():
             return synced_file_path
 
       def backend_dotenv_injection(self, base_env_path: str):
-            """
-            Algo: 
-                  1) Inject template
-                  2) Read base env, and append to template injection
-                  3) Write file
-            Parameters:
-                  - env_output: str = the path for where to write the env 
-            """
-
-            template = Template(ENV_TEMPLATE)
-
-            # Create copy of base file
+            synced_content = self.backend_injector.backend_dotenv_injection(backend_outputs=self.terraform_outputs.get("backend"))
             synced_file_path = self._create_copy_of_base_file(base_env_path=base_env_path)
-            backend_outputs = self.terraform_outputs.get("backend")
-
-            synced_content = template.render(outputs=backend_outputs)
-
             self._write_injection(
                                     file_name=synced_file_path, 
-                                    content=synced_content, file_mode="a")
+                                    content=synced_content, file_mode="a") 
+
       
       def frontend_dotenv_injection(self, base_env_path: str):
-            template = Template(ENV_TEMPLATE)
-
+            synced_content = self.frontend_injector.frontend_dotenv_injection(self.terraform_outputs.get("frontend"))
+            synced_file_path = self._create_copy_of_base_file(base_env_path=base_env_path)
+            self._write_injection(file_name=synced_file_path,
+                                    content=synced_content, 
+                                    file_mode="a")
+      
+      def ansible_injection(self, inventory_path: str):
             if self.environment == "dev":
-                  synced_file_path = self._create_copy_of_base_file(base_env_path=base_env_path)
-                  sycned_content = template.render(outputs={"VITE_BASE_URL": 
-                                                                              {"value":"http://localhost/api/"}})
-                  self._write_injection(file_name=synced_file_path,
-                                        content=sycned_content, 
-                                        file_mode="a")
-            elif self.environment == "production":
-                  ...
+                  raise ValueError("No ansible available for env stage")
+            if self.environment == "production":
+                  synced_content = self.ansible_injector.ansible_injection(self.terraform_outputs.get("ansible"))
+                  self._write_injection(file_name=inventory_path,
+                                    content=synced_content, 
+                                    file_mode="w")
 
+             
 
-
-
-
-            
+  
 
 
 if __name__ == "__main__":
       parser = argparse.ArgumentParser(description="Generate configuration files based on terraform outputs")
-      parser.add_argument("--environment", help="Takes on [staging, dev, prod]")
-      parser.add_argument("--terraform-dir", help="Directory of tf --where terraform output -json will be executed")
+      parser.add_argument("--environment", help="Takes on [staging, dev, prod]", required=True)
+      parser.add_argument("--terraform-dir", help="Directory of tf --where terraform output -json will be executed", required=True)
       parser.add_argument("--backend-dotenv-path", help="Type: str. Needs tp be the path to the base env. \
                                                 Will be used to access the create a copy of base_env with appended template stuff ")
       parser.add_argument("--frontend-dotenv-path", help="Type: str. Path for where to write to the frontend. \
                                                 Will be used to access the create a copy of base_env with appended template stuff ")
+      parser.add_argument("--ansible-inventory-path", help="Type: str. Path to write the rendered ansible template ")
 
       args = parser.parse_args()
       injector = VariableInjector(environment=args.environment, terraform_dir=args.terraform_dir)
 
       if args.backend_dotenv_path:
             injector.backend_dotenv_injection(base_env_path=args.backend_dotenv_path)
-      
+
       if args.frontend_dotenv_path:
             injector.frontend_dotenv_injection(base_env_path=args.frontend_dotenv_path)
+      
+      if args.ansible_inventory_path:
+            injector.ansible_injection(inventory_path=args.ansible_inventory_path)
             

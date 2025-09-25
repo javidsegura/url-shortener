@@ -5,6 +5,9 @@
   vars:
     remote_project_path: "/opt/{{ project_name }}"
     project_name: "url-shortener"
+    environment: "production" # THIS SHOULD BE PASSED BY CLI
+    src_backend_env_synced_path: "../../../backend/env_config/synced/.env.{{ environment  }}"
+    dest_backend_env_synced_path: "{{ remote_project_path }}/backend/env_config/synced/.env.{{ environment }}"
   tasks:
   - name: Ensure Docker and dependencies are installed
     ansible.builtin.dnf:
@@ -66,8 +69,8 @@
       
   - name: Copy backend synced .env
     ansible.builtin.copy:
-      src: "../../../backend/.env.production.synced"
-      dest: "{{ remote_project_path }}/backend/.env.production.synced"
+      src: "{{ src_backend_env_synced_path  }}"
+      dest: "{{ dest_backend_env_synced_path }}"
       owner: ec2-user
       group: docker
       mode: "0644"
@@ -117,5 +120,5 @@
       recreate: auto
     environment:
       ENVIRONMENT: production
-      BACKEND_ENV_FILE: "{{ remote_project_path }}/backend/.env.production.synced"
+      BACKEND_ENV_FILE: "{{ dest_backend_env_synced_path }}"
     

@@ -11,10 +11,6 @@ class Settings:
 
 		print(f"ENVIRONMENT IS: {ENVIRONMENT}")
 
-		if "dev" in ENVIRONMENT: # Loading with dotenv if dev
-			load_dotenv(f".env.dev.synced")
-			print(f"Just loaded file via dotenv")
-
 		# Database configuration
 		self.REDIS_URL = os.getenv("REDIS_URL")
 		self.MYSQL_PORT = os.getenv("MYSQL_PORT")
@@ -61,4 +57,4 @@ class Settings:
 
 
 settings = Settings()
-print(f"SETTINGS VLAUE: {settings.__dict__}")
+print(f"SETTINGS VLAUE: {settings.__dict__}") ## REMOVE IN PROD

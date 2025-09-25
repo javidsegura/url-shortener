@@ -9,8 +9,8 @@ YELLOW = \033[33m
 BLUE = \033[34m
 RESET = \033[0m
 
-BACKEND_ENV_FILE_SYNCED_PATH = ./backend/env_config/dotenvs/synced/.env.$(ENVIRONMENT)
-FROTNEND_ENV_FILE_SYNCED_PATH = ./frontend/env_config/dotenvs/synced/.env.$(ENVIRONMENT)
+BACKEND_ENV_FILE_SYNCED_PATH = ./backend/env_config/synced/.env.$(ENVIRONMENT)
+FROTNEND_ENV_FILE_SYNCED_PATH = ./frontend/env_config/synced/.env.$(ENVIRONMENT)
 TERRAFORM_PATH = ./infra/terraform/environment/$(ENVIRONMENT)
 PROJECT_NAME = url-shortener
 
@@ -57,7 +57,7 @@ dev-destroy-infra:
 
 deploy-start: ## ups infra for prod and stagin
 	$(MAKE) check_enviroment_variables
-	$(MAKE) -C infra up ENVIRONMENT=$(ENVIRONMENT)
+	$(MAKE) -C infra terraform-start ENVIRONMENT=$(ENVIRONMENT)
 	$(MAKE) -C infra sync_all ENVIRONMENT=$(ENVIRONMENT)
 	$(MAKE) -C frontend build
 	$(MAKE) -C backend push_docker
@@ -66,20 +66,7 @@ deploy-start: ## ups infra for prod and stagin
 deploy-stop: ## Stop development environment
 	@echo "$(YELLOW)Stopping development environment...$(RESET)"
 	$(MAKE) check_enviroment_variables
-	$(MAKE) -C infra down ENVIRONMENT="$(ENVIRONMENT)" 
-	$(MAKE) delete_ci_artifacts
-
-start-full-containerization: ## Containiizes backend, builts frontend -- essentially, dev with no hot-reload
-	$(MAKE) -C infra up ENVIRONMENT=$(ENVIRONMENT)
-	$(MAKE) -C infra sync_all ENVIRONMENT=$(ENVIRONMENT)
-	$(MAKE) -C frontend build
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f docker-compose.yml -f docker-compose.prod.yml -p $(PROJECT_NAME) up
-	$(MAKE) -C infra ansible-up
-
-stop-full-containerization: ## Stop development environment
-	@echo "$(YELLOW)Stopping development environment...$(RESET)"
-	$(MAKE) -C infra down ENVIRONMENT="$(ENVIRONMENT)" 
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f docker-compose.yml -f docker-compose.prod.yml -p $(PROJECT_NAME) down
+	$(MAKE) -C infra terraform-stop ENVIRONMENT="$(ENVIRONMENT)" 
 	$(MAKE) delete_ci_artifacts
 
 delete_ci_artifacts:
@@ -88,6 +75,8 @@ delete_ci_artifacts:
 	docker volume prune -f
 
 
+container_names:
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f docker-compose.yml -f docker-compose.prod.yml -p $(PROJECT_NAME) ps
 container_logs:
 	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f docker-compose.yml -f docker-compose.prod.yml -p $(PROJECT_NAME) logs $(SERVICE_NAME) -f
 

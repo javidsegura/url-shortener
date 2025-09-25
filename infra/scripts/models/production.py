@@ -8,7 +8,7 @@ class ProductionBackendOutputs(BaseModel):
 
 
 class ProductionFrontendOutputs(BaseModel):
-      ...
+      EC2_APP_SERVER_PUBLIC_IP: str
 
 class ProductionAnsibleOutputs(BaseModel):
       EC2_APP_SERVER_PUBLIC_IP: str
