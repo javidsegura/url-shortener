@@ -41,4 +41,8 @@ resource "aws_db_instance" "database" {
   vpc_security_group_ids = [var.database_sg_id]
   skip_final_snapshot = true
   multi_az = false
+  
+  tags = {
+    Name = "private_database"
+  }
 }

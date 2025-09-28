@@ -45,3 +45,16 @@ ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 [web_servers]
 {{ outputs.EC2_APP_SERVER_PUBLIC_IP }} ansible_user={{ outputs.EC2_APP_SERVER_SSH_USER }}
 """
+
+ANSIBLE_TEMPLATE_STAGIG = """
+[all:vars]
+ansible_ssh_private_key_file={{ outputs.EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH }}
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[web_servers]
+{{ outputs.EC2_APP_SERVER_PRIVATE_IP }} ansible_user={{ outputs.EC2_APP_SERVER_SSH_USER }} ansible_ssh_common_args='-o ProxyJump=bastion'
+
+[bastion_hosts]
+{{ outputs.EC2_BASTION_SERVER_PUBLIC_IP }} ansible_user={{ outputs.EC2_BASTION_SERVER_SSH_USER }}
+
+"""

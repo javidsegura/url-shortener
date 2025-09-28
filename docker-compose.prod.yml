@@ -17,5 +17,3 @@ services:
   db-migration:
       image: javidsegura/url_shortener_backend:production  # Add :production tag
 
-
-      

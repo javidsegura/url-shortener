@@ -1,20 +1,6 @@
 
-
-/*
-
-THINGS TO DO:
-1. Create VPC 
-2. Create security group
-3. Create EC2
-4. Create SSH key pair
-5. Crete ansible playbook
-6. Bind public IP
-
-*/
-
-
 resource "aws_instance" "web_app" {
-  ami = "ami-00ca32bbc84273381"
+  ami = "ami-08982f1c5bf93d976"
   instance_type = "t3.small"
   subnet_id = var.public_subnet_id
   vpc_security_group_ids = [var.web_app_sg_id]
@@ -24,6 +10,10 @@ resource "aws_instance" "web_app" {
   
   root_block_device {
     volume_size = 8
+  }
+
+  tags = {
+    Name = "public_web_server"
   }
 }
 
@@ -59,15 +49,15 @@ data "aws_iam_policy_document" "assume_role" {
 }
 
 # IAM Role for EC2 instance
-resource "aws_iam_role" "app_server_s3_permissions" {
-  name = "app_server_s3_permissions"
+resource "aws_iam_role" "app_server_role" {
+  name = "app_server_role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
 # IAM Instance Profile to attach the role to the EC2 instance
 resource "aws_iam_instance_profile" "web_app_profile" {
   name = "web_app_profile"
-  role = aws_iam_role.app_server_s3_permissions.name
+  role = aws_iam_role.app_server_role.name
 }
 
 # == POLICIES ==
@@ -90,7 +80,7 @@ resource "aws_iam_policy" "s3_read_put_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "s3_attachment" {
-  role       = aws_iam_role.app_server_s3_permissions.name
+  role       = aws_iam_role.app_server_role.name
   policy_arn = aws_iam_policy.s3_read_put_policy.arn
 }
 
@@ -113,6 +103,32 @@ resource "aws_iam_policy" "get_secret_value" {
 
 # Attaching the secrets manager policy to the IAM Role
 resource "aws_iam_role_policy_attachment" "secrets_manager_attachment" {
-  role       = aws_iam_role.app_server_s3_permissions.name
+  role       = aws_iam_role.app_server_role.name
   policy_arn = aws_iam_policy.get_secret_value.arn
+}
+# C) SSM Agent
+data "aws_iam_policy_document" "ssm_agent_access_policy" {
+  statement {
+    sid = "SSMAgentPolicy"
+    actions = [
+        "ssm:UpdateInstanceInformation",
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel"
+      ]
+    resources = [ "*" ]
+  }
+}
+
+resource "aws_iam_policy" "enable_ssm_agent" {
+  name        = "ssm_agent_policy_public_web_server"
+  description = "Policy that allows SSM agent on public web server"
+  policy      = data.aws_iam_policy_document.ssm_agent_access_policy.json
+}
+
+# Attaching the secrets manager policy to the IAM Role
+resource "aws_iam_role_policy_attachment" "ssm_agent_attachment" {
+  role       = aws_iam_role.app_server_role.name
+  policy_arn = aws_iam_policy.enable_ssm_agent.arn
 }

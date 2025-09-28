@@ -9,13 +9,19 @@ RESET = \033[0m
 
 .DEFAULT_GOAL := help
 
+# DOTENVS
 BASE_BACKEND_ENV_FILE_PATH = ../backend/env_config/base/.env.$(ENVIRONMENT)
 BASE_FRONTEND_ENV_FILE_PATH = ../frontend/app/env_config/base/.env.$(ENVIRONMENT)
 ANSIBLE_INVENTORY_FILE_PATH = ./ansible/inventory/$(ENVIRONMENT).ini
 
+# GENERAL PATHS
 TERRAFORM_ENVIRONMENT_PATH=terraform/environment/$(ENVIRONMENT)
 TERRAFORM_SET_UP_PATH=terraform/set-up
-SYNC_SCRIPT_PATH = scripts.main
+
+# SCRIPTS
+SYNC_SCRIPT_PATH = scripts.output_redirection.main
+EXTRACT_DB_CRENDENTIALS_SCRIPT_PATH = scripts.private_connections.production.extract_credentials
+AWS_SECRETS_MANAGER_REGION  = us-east-1
 
 help: ## Show this help message
 	@echo "$(BLUE)Available commands:$(RESET)"
@@ -95,6 +101,11 @@ sync_envs:
 sync_all:
 	$(MAKE) sync_envs
 	$(MAKE) sync_ansible_inventory
+
+extract-db-credentials:
+	python3 -m $(EXTRACT_DB_CRENDENTIALS_SCRIPT_PATH)\
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
+	   --region-name $(AWS_SECRETS_MANAGER_REGION)
 
 check_enviroment_variables:
 	@if [ -z "$$ENVIRONMENT" ]; then \

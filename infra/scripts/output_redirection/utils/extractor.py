@@ -25,7 +25,11 @@ class Extractor:
                   #       {
                   #             "value": "Rds mysql hostttttt"
                   #       },
-                  #       "ec2_app_server_public_ip".upper(): 
+                  #       "ec2_app_server_private_ip".upper(): 
+                  #       {
+                  #             "value": "Ec2 app public ippppp"
+                  #       },
+                  #       "ec2_bastion_server_public_ip".upper(): 
                   #       {
                   #             "value": "Ec2 app public ippppp"
                   #       },
@@ -33,7 +37,11 @@ class Extractor:
                   #       {
                   #             "value": "EC2 app ssh userrrrr"
                   #       },
-                  #       "ec2_app_server_ssh_private_key_file_path".upper(): 
+                  #       "ec2_app_bastion_ssh_user".upper(): 
+                  #       {
+                  #             "value": "EC2 app ssh userrrrr"
+                  #       },
+                  #       "ec2_app_servers_ssh_private_key_file_path".upper(): 
                   #       {
                   #             "value": "EC2 app server private key file paaath"
                   #       },

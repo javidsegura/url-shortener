@@ -13,3 +13,7 @@ variable "ssh_key_local_path" {
 variable "db_username" {
   type = string
 }
+
+variable "project_name" {
+  type = string
+}
