@@ -5,7 +5,7 @@ import json
 import os
 import subprocess
 
-from .utils import ConnectionModel
+from .utils import ProdConnectionModel, StagingConnectionModel
 
 class ConnectionEstabisher():
       """
@@ -17,7 +17,7 @@ class ConnectionEstabisher():
             self.terraform_dir = terraform_dir
             self.terraform_outputs = self.extract_terraform_outputs()
 
-      def extract_terraform_outputs(self):
+      def extract_terraform_outputs(self) -> ProdConnectionModel | StagingConnectionModel:
             try:
                   # Extract raw outputs
                   output = subprocess.run(
@@ -29,24 +29,53 @@ class ConnectionEstabisher():
                   )
                   raw_outputs = json.loads(output.stdout)
                   # Filter outputs to pydantic model
+                  print(f"raw_outputs: {raw_outputs}")
                   return self._filter_outputs_for_model(raw_outputs)
             except:
                   raise 
       def _filter_outputs_for_model(self, raw_outputs: Dict[str, Any]):
-            model_fields = set(ConnectionModel.model_fields.keys())
+            if self.environment == "production":
+                  model_fields = set(ProdConnectionModel.model_fields.keys())
+            elif self.environment == "staging":
+                  model_fields = set(StagingConnectionModel.model_fields.keys())
             filtered = {
                   key.upper(): value["value"] for key, value in raw_outputs.items()
                   if key.upper() in model_fields
             }
-            return ConnectionModel(**filtered)
+            if self.environment == "production":
+                  return ProdConnectionModel(**filtered)
+            elif self.environment == "staging":
+                  return StagingConnectionModel(**filtered)
+
       def _handle_ssh_connection(self):
+
             if self.environment == "production":
                   EC2_APP_SERVER_SSH_USER = self.terraform_outputs.EC2_APP_SERVER_SSH_USER
                   EC2_APP_SERVER_PUBLIC_IP = self.terraform_outputs.EC2_APP_SERVER_PUBLIC_IP
-                  credentials_path = f"{self.terraform_dir}/secrets/ssh_key.pem"
+                  EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH = self.terraform_outputs.EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH
 
                   subprocess.call(
-                        ["ssh", "-i", f"{credentials_path}", f"{EC2_APP_SERVER_SSH_USER}@{EC2_APP_SERVER_PUBLIC_IP}"]
+                        ["ssh", "-i", f"{EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH}", f"{EC2_APP_SERVER_SSH_USER}@{EC2_APP_SERVER_PUBLIC_IP}"]
+                  )
+            elif self.environment == "staging":
+                  EC2_APP_SERVER_SSH_USER = self.terraform_outputs.EC2_APP_SERVER_SSH_USER
+                  EC2_APP_SERVER_PRIVATE_IP = self.terraform_outputs.EC2_APP_SERVER_PRIVATE_IP
+                  EC2_BASTION_SERVER_SSH_USER = self.terraform_outputs.EC2_BASTION_SERVER_SSH_USER
+                  EC2_BASTION_SERVER_PUBLIC_IP = self.terraform_outputs.EC2_BASTION_SERVER_PUBLIC_IP
+                  EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH = self.terraform_outputs.EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH
+            
+                  proxy_command = f"ssh -i {EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -W %h:%p -q {EC2_BASTION_SERVER_SSH_USER}@{EC2_BASTION_SERVER_PUBLIC_IP}"
+        
+                  cmd = [
+                        "ssh",
+                        "-i", EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH,
+                        "-o", f"ProxyCommand={proxy_command}",
+                        f"{EC2_APP_SERVER_SSH_USER}@{EC2_APP_SERVER_PRIVATE_IP}"
+                  ]
+                  
+                  print(f"Command is: {cmd}")
+                  subprocess.call(
+                        cmd
                   )
             else:
                   raise ValueError("Environment must be production or staging")
@@ -58,7 +87,6 @@ class ConnectionEstabisher():
                   raise ValueError("Environment must be production or staging")
       def _handle_db_connection(self):
             if self.environment == "production":
-                  print("TERRAFORM OUTPUTS:", self.terraform_outputs)
                   EC2_APP_SERVER_SSH_USER = self.terraform_outputs.EC2_APP_SERVER_SSH_USER
                   EC2_APP_SERVER_PUBLIC_IP = self.terraform_outputs.EC2_APP_SERVER_PUBLIC_IP
                   RDS_MYSQL_HOST = self.terraform_outputs.RDS_MYSQL_HOST

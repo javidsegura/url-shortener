@@ -9,3 +9,7 @@ variable "private_subnet_groups_name" {
 variable "db_username" {
   type = string
 }
+
+variable "environment" {
+  type = string
+}

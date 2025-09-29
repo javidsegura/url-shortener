@@ -13,4 +13,8 @@ class StagingFrontendOutputs(BaseModel):
 
 class StagingAnsibleOutputs(BaseModel):
       AWS_MAIN_REGION: str
-      EC2_APP_SERVER_INSTANCE_ID: str
+      EC2_BASTION_SERVER_PUBLIC_IP: str
+      EC2_APP_SERVER_PRIVATE_IP: str
+      EC2_APP_SERVER_SSH_USER: str
+      EC2_BASTION_SERVER_SSH_USER: str
+      EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH: str

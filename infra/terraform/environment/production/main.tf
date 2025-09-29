@@ -59,6 +59,7 @@ module "rds" {
   db_username = var.db_username
   database_sg_id = module.vpc.database_sg_id
   private_subnet_groups_name = module.vpc.private_subnet_groups_name
+  environment = "production"
 
 }
 

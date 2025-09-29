@@ -16,7 +16,25 @@ resource "aws_instance" "web_app" {
 
   }
   tags = {
-    "Role" = "Web server"
+    Name = "Web server" 
+  }
+}
+
+resource "aws_instance" "bastion_host" { # Make this a weaker instance 
+  ami = "ami-00ca32bbc84273381" # Standard AWS Linux 2023
+  instance_type = var.instance_type_bastion
+  subnet_id = var.public_subnet_id
+  vpc_security_group_ids = [var.bastion_sg_id]
+
+  key_name = aws_key_pair.key_pair_ssh.key_name
+  
+  root_block_device {
+    volume_size = 8
+    delete_on_termination = true
+  }
+
+  tags = {
+    Name = "Bastion server" 
   }
 }
 
