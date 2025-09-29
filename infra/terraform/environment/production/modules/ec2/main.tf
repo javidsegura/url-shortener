@@ -106,29 +106,3 @@ resource "aws_iam_role_policy_attachment" "secrets_manager_attachment" {
   role       = aws_iam_role.app_server_role.name
   policy_arn = aws_iam_policy.get_secret_value.arn
 }
-# C) SSM Agent
-data "aws_iam_policy_document" "ssm_agent_access_policy" {
-  statement {
-    sid = "SSMAgentPolicy"
-    actions = [
-        "ssm:UpdateInstanceInformation",
-        "ssmmessages:CreateControlChannel",
-        "ssmmessages:CreateDataChannel",
-        "ssmmessages:OpenControlChannel",
-        "ssmmessages:OpenDataChannel"
-      ]
-    resources = [ "*" ]
-  }
-}
-
-resource "aws_iam_policy" "enable_ssm_agent" {
-  name        = "ssm_agent_policy_public_web_server"
-  description = "Policy that allows SSM agent on public web server"
-  policy      = data.aws_iam_policy_document.ssm_agent_access_policy.json
-}
-
-# Attaching the secrets manager policy to the IAM Role
-resource "aws_iam_role_policy_attachment" "ssm_agent_attachment" {
-  role       = aws_iam_role.app_server_role.name
-  policy_arn = aws_iam_policy.enable_ssm_agent.arn
-}

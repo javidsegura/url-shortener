@@ -11,11 +11,16 @@ class FrontendInjector:
             self.environment = environment
 
       def _resolve_base_url(self, ansible_outputs: BaseModel):
-            public_ip = ansible_outputs.get("EC2_APP_SERVER_PUBLIC_IP")
             if self.environment == "dev":
                   return {"VITE_BASE_URL": "http://localhost/api/"}
+            elif self.environment == "staging":
+                  server_ip = ansible_outputs.get("EC2_APP_SERVER_PRIVATE_IP")
+                  return {"VITE_BASE_URL": f"http://{server_ip}/api/"}
             elif self.environment == "production":
-                  return {"VITE_BASE_URL": f"http://{public_ip}/api/"}
+                  server_ip = ansible_outputs.get("EC2_APP_SERVER_PUBLIC_IP")
+                  return {"VITE_BASE_URL": f"http://{server_ip}/api/"}
+            else:
+                  raise ValueError(f"Environment can only be dev, production or staging. Currently you have: '{self.environment}'")
 
       def frontend_dotenv_injection(self, frontend_outputs: str):
             template = Template(ENV_TEMPLATE)

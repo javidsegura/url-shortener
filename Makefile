@@ -57,7 +57,7 @@ dev-destroy-infra:
 
 deploy-start: ## ups infra for prod and stagin
 	$(MAKE) check_enviroment_variables
-	$(MAKE) -C infra terraform-start ENVIRONMENT=$(ENVIRONMENT)
+	$(MAKE) -C infra terraform-apply ENVIRONMENT=$(ENVIRONMENT)
 	$(MAKE) -C infra sync_all ENVIRONMENT=$(ENVIRONMENT)
 	$(MAKE) -C frontend build
 	$(MAKE) -C backend push_docker

@@ -24,7 +24,12 @@ dev = [
       "ruff",
       "bandit",
       "pre-commit",
-      "Jinja2"
+      "Jinja2",
+      "botocore",
+      "ansible-core",
+      "PyYAML",
+      "cryptography",
+      "paramiko"
 ]
 test = [
       "pytest",

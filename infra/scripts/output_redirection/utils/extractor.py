@@ -17,37 +17,29 @@ class Extractor:
                         capture_output=True
                   )
                   # raw_outputs = {
+                  #       "EC2_PRIVATE_SERVER_INSTANCE_ID": 
+                  #       {
+                  #             "value": "i-1234567890abcdef0"
+                  #       },
+                  #       "AWS_MAIN_REGION": 
+                  #       {
+                  #             "value": "us-east-1"
+                  #       },
                   #       "S3_MAIN_BUCKET_NAME": 
                   #       {
-                  #             "value": "A greate s3 bucket main name"
+                  #             "value": "great-bucket"
+                  #       },
+                  #       "EC2_APP_SERVER_PUBLIC_IP": 
+                  #       {
+                  #             "value": "12.323.12"
+                  #       },
+                  #       "RDS_DB_CREDENTIALS_KEY": 
+                  #       {
+                  #             "value": "a great key"
                   #       },
                   #       "RDS_MYSQL_HOST": 
                   #       {
-                  #             "value": "Rds mysql hostttttt"
-                  #       },
-                  #       "ec2_app_server_private_ip".upper(): 
-                  #       {
-                  #             "value": "Ec2 app public ippppp"
-                  #       },
-                  #       "ec2_bastion_server_public_ip".upper(): 
-                  #       {
-                  #             "value": "Ec2 app public ippppp"
-                  #       },
-                  #       "ec2_app_server_ssh_user".upper(): 
-                  #       {
-                  #             "value": "EC2 app ssh userrrrr"
-                  #       },
-                  #       "ec2_app_bastion_ssh_user".upper(): 
-                  #       {
-                  #             "value": "EC2 app ssh userrrrr"
-                  #       },
-                  #       "ec2_app_servers_ssh_private_key_file_path".upper(): 
-                  #       {
-                  #             "value": "EC2 app server private key file paaath"
-                  #       },
-                  #       "rds_db_credentials_key".upper(): 
-                  #       {
-                  #             "value": "Rds db credentials keyyyy"
+                  #             "value": "aws.host.com"
                   #       },
                   # }
 
@@ -57,6 +49,7 @@ class Extractor:
                         for key, value in raw_outputs.items()
                   }
                   validated_outputs = self._filter_terraform_outputs(flattened_outputs)
+                  print(f"Validated outputs: {validated_outputs}")
                   return validated_outputs
       
       def _filter_terraform_outputs(self, outputs: Dict[str, Any]):
@@ -73,9 +66,11 @@ class Extractor:
       def _get_models_per_environment(self, environment: str):
             from ..models.dev import DevBackendOutputs, DevFrontendOutputs, DevAnsibleOutputs
             from ..models.production import ProductionBackendOutputs, ProductionFrontendOutputs, ProductionAnsibleOutputs
+            from ..models.staging import StagingBackendOutputs, StagingFrontendOutputs, StagingAnsibleOutputs
 
             model_mapping = {
                   "dev": (DevFrontendOutputs, DevBackendOutputs, DevAnsibleOutputs),
+                  "staging": (StagingFrontendOutputs, StagingBackendOutputs, StagingAnsibleOutputs),
                   "production": (ProductionFrontendOutputs, ProductionBackendOutputs, ProductionAnsibleOutputs),
             }
 

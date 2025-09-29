@@ -7,6 +7,12 @@ terraform {
       version = "~> 5.0"
     }
   }
+    backend "s3" {
+    bucket = "url-shortener-remote-state-bucket-sblyckh5"
+    key = "remote-state/staging/terraform.tfstate"
+    region = "us-east-1"
+    encrypt = true
+  }
 }
 
 

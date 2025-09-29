@@ -1,5 +1,26 @@
 
 
+# EC2 instance 
+resource "aws_instance" "web_app" {
+  ami = "ami-08982f1c5bf93d976" # Standard AWS Linux 2023
+  instance_type = var.instance_type_web_app
+  subnet_id = var.private_subnet_sever_id
+  vpc_security_group_ids = [var.web_app_sg_id]
+
+  iam_instance_profile = aws_iam_instance_profile.web_app_profile.name
+  key_name = aws_key_pair.key_pair_ssh.key_name
+  
+  root_block_device {
+    volume_size = 8
+    delete_on_termination = true
+
+  }
+  tags = {
+    "Role" = "Web server"
+  }
+}
+
+
 # SSH KEYS
 resource "tls_private_key" "priv_key" {
   algorithm = "RSA"
@@ -30,19 +51,20 @@ data "aws_iam_policy_document" "assume_role" {
   }
 }
 
-## IAM Role for EC2 instance
-resource "aws_iam_role" "app_server_s3_permissions" {
-  name = "app_server_s3_permissions"
+# IAM Role for EC2 instance
+resource "aws_iam_role" "app_server_role_staging" {
+  name = "app_server_role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
-## IAM Instance Profile to attach the role to the EC2 instance
+# IAM Instance Profile to attach the role to the EC2 instance
 resource "aws_iam_instance_profile" "web_app_profile" {
   name = "web_app_profile"
-  role = aws_iam_role.app_server_s3_permissions.name
+  role = aws_iam_role.app_server_role_staging.name
 }
 
-## Policy, S3
+# == POLICIES ==
+# A) Policy defining S3 permissions
 data "aws_iam_policy_document" "s3_access_policy" {
   statement {
     sid = "S3ReadAndPut"
@@ -61,11 +83,11 @@ resource "aws_iam_policy" "s3_read_put_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "s3_attachment" {
-  role       = aws_iam_role.app_server_s3_permissions.name
+  role       = aws_iam_role.app_server_role_staging.name
   policy_arn = aws_iam_policy.s3_read_put_policy.arn
 }
 
-## Policy, Secret manager
+# B) Secret manager
 data "aws_iam_policy_document" "secret_manager_access_policy" {
   statement {
     sid = "SecretsManagerAccessSecret"
@@ -84,44 +106,12 @@ resource "aws_iam_policy" "get_secret_value" {
 
 # Attaching the secrets manager policy to the IAM Role
 resource "aws_iam_role_policy_attachment" "secrets_manager_attachment" {
-  role       = aws_iam_role.app_server_s3_permissions.name
+  role       = aws_iam_role.app_server_role_staging.name
   policy_arn = aws_iam_policy.get_secret_value.arn
 }
-
-# EC2 instance 
-resource "aws_instance" "web_app" {
-  ami = "ami-00ca32bbc84273381" # Standard AWS Linux 2023
-  instance_type = var.instance_type_web_app
-  subnet_id = var.private_subnet_sever_id
-  vpc_security_group_ids = [var.web_app_sg_id]
-
-  iam_instance_profile = aws_iam_instance_profile.web_app_profile.name
-  key_name = aws_key_pair.key_pair_ssh.key_name
-  
-  root_block_device {
-    volume_size = 8
-    delete_on_termination = true
-
-  }
-  tags = {
-    "Role" = "Web server"
-  }
+# C) SSM Agent
+resource "aws_iam_role_policy_attachment" "ssm_managed_instance_core" {
+  role       = aws_iam_role.app_server_role_staging.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-resource "aws_instance" "bastion_host" {
-  ami = "ami-00ca32bbc84273381" # Standard AWS Linux 2023
-  instance_type = var.instance_type_bastion
-  subnet_id = var.public_subnet_id
-  vpc_security_group_ids = [var.bastion_sg_id]
-
-  key_name = aws_key_pair.key_pair_ssh.key_name
-  
-  root_block_device {
-    volume_size = 8
-    delete_on_termination = true
-  }
-
-  tags = {
-    "Role" = "Bastion"
-  }
-}

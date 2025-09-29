@@ -13,9 +13,7 @@ def extract_terraform_outputs(terraform_dir: str):
                   text=True,
                   capture_output=True
             )
-            print(output.stdout)
             raw_outputs = json.loads(output.stdout)
-            print(raw_outputs)
             secret_key = raw_outputs["rds_db_credentials_key"]["value"]
             return secret_key
       except:

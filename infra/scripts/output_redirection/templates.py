@@ -38,23 +38,22 @@ ENV_TEMPLATE = """
 
 
 ANSIBLE_TEMPLATE_PRODUCTION = """
-[all:vars]
-ansible_ssh_private_key_file={{ outputs.EC2_APP_SERVER_SSH_PRIVATE_KEY_FILE_PATH }}
-ansible_ssh_common_args='-o StrictHostKeyChecking=no'
-
 [web_servers]
 {{ outputs.EC2_APP_SERVER_PUBLIC_IP }} ansible_user={{ outputs.EC2_APP_SERVER_SSH_USER }}
+
+[all:vars]
+ansible_ssh_private_key_file={{ outputs.EC2_APP_SERVER_SSH_PRIVATE_KEY_FILE_PATH }} 
+
+
 """
 
-ANSIBLE_TEMPLATE_STAGIG = """
-[all:vars]
-ansible_ssh_private_key_file={{ outputs.EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH }}
-ansible_ssh_common_args='-o StrictHostKeyChecking=no'
-
+ANSIBLE_TEMPLATE_STAGING = """
 [web_servers]
-{{ outputs.EC2_APP_SERVER_PRIVATE_IP }} ansible_user={{ outputs.EC2_APP_SERVER_SSH_USER }} ansible_ssh_common_args='-o ProxyJump=bastion'
+{{ outputs.EC2_APP_SERVER_INSTANCE_ID }} ansible_host={{ outputs.EC2_APP_SERVER_INSTANCE_ID }}
 
-[bastion_hosts]
-{{ outputs.EC2_BASTION_SERVER_PUBLIC_IP }} ansible_user={{ outputs.EC2_BASTION_SERVER_SSH_USER }}
-
+[web_servers:vars]
+ansible_connection=aws_ssm
+ansible_aws_ssm_region={{ outputs.AWS_MAIN_REGION }}
+ansible_aws_ssm_s3_addressing_style=virtual
+ansible_aws_ssm_s3_key_prefix=ssm/staging/
 """

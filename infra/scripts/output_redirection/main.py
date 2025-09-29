@@ -66,11 +66,14 @@ class VariableInjector():
       def ansible_injection(self, inventory_path: str):
             if self.environment == "dev":
                   raise ValueError("No ansible available for env stage")
-            if self.environment == "production":
+            elif self.environment == "production" or self.environment == "staging":
                   synced_content = self.ansible_injector.ansible_injection(self.terraform_outputs.get("ansible"))
                   self._write_injection(file_name=inventory_path,
                                     content=synced_content, 
                                     file_mode="w")
+            else:
+                  raise ValueError(f"Environment can only be dev, production or staging. Currently you have: '{self.environment}'")
+
 
              
 
@@ -79,7 +82,10 @@ class VariableInjector():
 
 if __name__ == "__main__":
       parser = argparse.ArgumentParser(description="Generate configuration files based on terraform outputs")
-      parser.add_argument("--environment", help="Takes on [staging, dev, prod]", required=True)
+      parser.add_argument("--environment", 
+                        help="Takes on [staging, dev, prod]",
+                        required=True,
+                        choices=["dev", "staging", "production"])
       parser.add_argument("--terraform-dir", help="Directory of tf --where terraform output -json will be executed", required=True)
       parser.add_argument("--backend-dotenv-path", help="Type: str. Needs tp be the path to the base env. \
                                                 Will be used to access the create a copy of base_env with appended template stuff ")

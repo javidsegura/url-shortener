@@ -9,6 +9,10 @@ RESET = \033[0m
 
 .DEFAULT_GOAL := help
 
+# VENV
+VENV = ./.venv
+VENV_ACTIVATE = source $(VENV)/bin/activate
+
 # DOTENVS
 BASE_BACKEND_ENV_FILE_PATH = ../backend/env_config/base/.env.$(ENVIRONMENT)
 BASE_FRONTEND_ENV_FILE_PATH = ../frontend/app/env_config/base/.env.$(ENVIRONMENT)
@@ -20,36 +24,41 @@ TERRAFORM_SET_UP_PATH=terraform/set-up
 
 # SCRIPTS
 SYNC_SCRIPT_PATH = scripts.output_redirection.main
-EXTRACT_DB_CRENDENTIALS_SCRIPT_PATH = scripts.private_connections.production.extract_credentials
 AWS_SECRETS_MANAGER_REGION  = us-east-1
 
 help: ## Show this help message
 	@echo "$(BLUE)Available commands:$(RESET)"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(GREEN)%-15s$(RESET) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-install-remote-state:
+
+start-remote-state:
 	cd $(TERRAFORM_SET_UP_PATH) && terraform init && terraform apply 
-uninstall-remote-state:
+destroy-remote-state:
 	cd $(TERRAFORM_SET_UP_PATH) && terraform destroy
 
 install: ## Initialize Terraform
+	python3.11 -m venv $(VENV)
+	pip3 install -r ./requirements.txt
 	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform init
 	brew install ansible
-	ansible-galaxy collection install community.docker
+	$(VENV_ACTIVATE) && pip install boto3 botocore
+	$(VENV_ACTIVATE) && ansible-galaxy install -r ./ansible/dependencies.yml
+
+
 
 check: ## Apply Terraform configuration
 	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform plan
 
-output:
+terraform-output:
 	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform output 
-output-json:
+terraform-output-json:
 	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform output -json
 
-terraform-start: ## Apply Terraform configuration
+terraform-apply: ## Apply Terraform configuration
 	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform apply
 
@@ -60,9 +69,9 @@ terraform-stop: ## Apply Terraform configuration
 
 ansible-ping: ## Check ansible connection is up
 	$(MAKE) check_enviroment_variables
-	ansible all -m ping -i ./ansible/inventory/$(ENVIRONMENT).ini
+	$(VENV_ACTIVATE) && ANSIBLE_CONFIG=./ansible/ansible.cfg ansible all -m ping -i ./ansible/inventory/$(ENVIRONMENT).ini -vvv
 
-ansible-start:
+ansible-start: ## Runs ansible playbook
 	ansible-playbook ./ansible/playbook/multi-container.yml -i ./ansible/inventory/$(ENVIRONMENT).ini -e "stage_environment=production"
 
 terraform-check:
@@ -85,7 +94,7 @@ sync_frontend_env:  ## Inject tf outputs into frontend dotenv
 	   --frontend-dotenv-path $(BASE_FRONTEND_ENV_FILE_PATH)
 
 
-sync_ansible_inventory:
+sync_ansible_inventory: ## ## Inject tf outputs into ansible
 	@echo "Syncing Terraform outputs to Ansible inventory..."
 	$(MAKE) check_enviroment_variables
 	python3 -m $(SYNC_SCRIPT_PATH) \
@@ -94,18 +103,34 @@ sync_ansible_inventory:
 	   --ansible-inventory-path $(ANSIBLE_INVENTORY_FILE_PATH)
 
 
-sync_envs:
+sync_envs: 
 	$(MAKE) sync_backend_env
 	$(MAKE) sync_frontend_env
 
-sync_all:
+sync_all: ## Syncs tf output in dotenvs (backend and frontend) and ansible
 	$(MAKE) sync_envs
 	$(MAKE) sync_ansible_inventory
 
 extract-db-credentials:
-	python3 -m $(EXTRACT_DB_CRENDENTIALS_SCRIPT_PATH)\
+	python3 -m scripts.private_connections.extract_credentials\
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --region-name $(AWS_SECRETS_MANAGER_REGION)
+
+connection-ssh-web-server: ## Send TCP traffic to port 22 in remote host 
+	python3 -m scripts.private_connections.create_connection \
+	   --environment $(ENVIRONMENT) \
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
+	   --type-of-connection ssh
+connection-http-traffic-web-server: ## SSH tunnel between local HTTP port and instance HTTP port
+	python3 -m scripts.private_connections.create_connection \
+	   --environment $(ENVIRONMENT) \
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
+	   --type-of-connection web-serving
+connection-db: ## SSH tunnel between local MySQL port and instance MySQL port
+	python3 -m scripts.private_connections.create_connection \
+	   --environment $(ENVIRONMENT) \
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
+	   --type-of-connection db
 
 check_enviroment_variables:
 	@if [ -z "$$ENVIRONMENT" ]; then \

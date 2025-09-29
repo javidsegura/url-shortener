@@ -19,3 +19,10 @@ output "ec2_app_server_ssh_private_key_file_path" {
 output "rds_db_credentials_key" {
   value = module.rds.db_crendentials_key
 }
+
+output "EC2_APP_SERVER_INSTANCE_ID" {
+  value = module.ec2.EC2_APP_SERVER_INSTANCE_ID
+}
+output "aws_main_region" {
+  value = var.main_region
+}
