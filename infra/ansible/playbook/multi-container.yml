@@ -73,7 +73,7 @@
       mode: "0644"
     loop:
       - docker-compose.yml
-      - docker-compose.prod.yml
+      - docker-compose.{{ stage_environment }}.yml
       - nginx.prod.conf
       
   - name: Copy backend synced .env
@@ -128,12 +128,12 @@
       project_src: "{{ remote_project_path }}"
       files:
         - docker-compose.yml
-        - docker-compose.prod.yml
+        - docker-compose.{{stage_environment}}.yml
       project_name: "{{ project_name }}"
       state: present
       pull: always 
       recreate: always
     environment:
-      ENVIRONMENT: production
+      ENVIRONMENT: "{{ stage_environment }}"
       BACKEND_ENV_FILE: "{{ dest_backend_env_synced_path }}"
     

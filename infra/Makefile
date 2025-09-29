@@ -72,7 +72,7 @@ ansible-ping: ## Check ansible connection is up
 	$(VENV_ACTIVATE) && ANSIBLE_CONFIG=./ansible/ansible.cfg ansible all -m ping -i ./ansible/inventory/$(ENVIRONMENT).ini -vvv
 
 ansible-start: ## Runs ansible playbook
-	$(VENV_ACTIVATE) && ANSIBLE_CONFIG=./ansible/ansible.cfg ansible-playbook ./ansible/playbook/multi-container.yml -i ./ansible/inventory/$(ENVIRONMENT).ini -e "stage_environment=production"
+	$(VENV_ACTIVATE) && ANSIBLE_CONFIG=./ansible/ansible.cfg ansible-playbook ./ansible/playbook/multi-container.yml -i ./ansible/inventory/$(ENVIRONMENT).ini -e "stage_environment=$(ENVIRONMENT)"
 
 terraform-check:
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform plan

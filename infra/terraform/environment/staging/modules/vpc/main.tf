@@ -50,8 +50,13 @@ resource "aws_route_table_association" "public_association" {
 }
 
 ## Private
+
 resource "aws_route_table" "private_subnet_route_table" {
   vpc_id = aws_vpc.main_vpc.id
+  route {
+    cidr_block           = "0.0.0.0/0"
+    network_interface_id = aws_instance.nat_instance.primary_network_interface_id
+  }
 }
 
 resource "aws_route_table_association" "private_association_subnet_sever_a" {
@@ -65,6 +70,69 @@ resource "aws_route_table_association" "private_association_subnet_data_a" {
 resource "aws_route_table_association" "private_association_subnet_data_b" {
   subnet_id = aws_subnet.private_subnet_data_b.id
   route_table_id = aws_route_table.private_subnet_route_table.id
+}
+
+# NAT Instance for Private Subnets
+data "aws_ami" "amazon_linux_2" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+resource "aws_security_group" "nat_sg" {
+  vpc_id = aws_vpc.main_vpc.id
+
+  name = "NAT Instance SG"
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "nat_instance" {
+  ami                         = data.aws_ami.amazon_linux_2.id
+  instance_type               = "t3.nano"
+  subnet_id                   = aws_subnet.public_subnet_bastion_a.id
+  associate_public_ip_address = true
+  source_dest_check           = false
+  vpc_security_group_ids      = [aws_security_group.nat_sg.id]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              sysctl -w net.ipv4.ip_forward=1
+              echo net.ipv4.ip_forward = 1 >> /etc/sysctl.conf
+              yum install -y iptables-services
+              systemctl enable iptables
+              systemctl start iptables
+              iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+              iptables -F FORWARD
+              iptables -A FORWARD -i eth0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+              iptables -A FORWARD -s 10.0.0.0/16 -j ACCEPT
+              service iptables save
+              EOF
+
+  depends_on = [aws_internet_gateway.public_IGW]
+}
+
+resource "aws_eip" "nat_eip" {
+  domain = "vpc"
+}
+
+resource "aws_eip_association" "nat_eip_assoc" {
+  allocation_id = aws_eip.nat_eip.id
+  instance_id   = aws_instance.nat_instance.id
 }
 
 # Subnet Groups
@@ -133,4 +201,5 @@ resource "aws_security_group" "database_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
 

@@ -20,9 +20,16 @@ dev: ## Start frontend development server
 	@echo "Starting frontend dev server"
 	cd ./app && npm run dev
 
-build: ## Build frontend for production
+build: ## Build frontend based on ENVIRONMENT (production|staging)
 	cd ./app; \
-	npm run build
+	if [ "$$ENVIRONMENT" = "production" ]; then \
+		npm run build; \
+	elif [ "$$ENVIRONMENT" = "staging" ]; then \
+		npm run staging; \
+	else \
+		echo "ENVIRONMENT must be set to 'production' or 'staging'"; \
+		exit 1; \
+	fi
 
 build-local: ## Build and preview frontend locally
 	cd ./app; \
