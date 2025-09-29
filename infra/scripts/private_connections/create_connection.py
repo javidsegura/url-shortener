@@ -48,7 +48,6 @@ class ConnectionEstabisher():
                   return StagingConnectionModel(**filtered)
 
       def _handle_ssh_connection(self):
-
             if self.environment == "production":
                   EC2_APP_SERVER_SSH_USER = self.terraform_outputs.EC2_APP_SERVER_SSH_USER
                   EC2_APP_SERVER_PUBLIC_IP = self.terraform_outputs.EC2_APP_SERVER_PUBLIC_IP
@@ -90,14 +89,30 @@ class ConnectionEstabisher():
                   EC2_APP_SERVER_SSH_USER = self.terraform_outputs.EC2_APP_SERVER_SSH_USER
                   EC2_APP_SERVER_PUBLIC_IP = self.terraform_outputs.EC2_APP_SERVER_PUBLIC_IP
                   RDS_MYSQL_HOST = self.terraform_outputs.RDS_MYSQL_HOST
-                  credentials_path = f"{self.terraform_dir}/secrets/ssh_key.pem"
+                  EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH = self.terraform_outputs.EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH
                   local_port_to_send_from = 3307
                   local_port_to_receive_from = 3306
 
-                  cmd = ["ssh", "-i", f"{credentials_path}", "-N", "-L",
+                  cmd = ["ssh", "-i", f"{EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH}", "-N", "-L",
                          f"{local_port_to_send_from}:{RDS_MYSQL_HOST}:{local_port_to_receive_from}",
                          f"{EC2_APP_SERVER_SSH_USER}@{EC2_APP_SERVER_PUBLIC_IP}"]
 
+                  print(f"Conection started: ")
+                  subprocess.call(
+                        cmd
+                  )
+            elif self.environment == "staging":
+                  EC2_BASTION_SERVER_SSH_USER = self.terraform_outputs.EC2_BASTION_SERVER_SSH_USER
+                  EC2_BASTION_SERVER_PUBLIC_IP = self.terraform_outputs.EC2_BASTION_SERVER_PUBLIC_IP
+                  RDS_MYSQL_HOST = self.terraform_outputs.RDS_MYSQL_HOST
+                  EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH = self.terraform_outputs.EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH
+                  local_port_to_send_from = 3307
+                  local_port_to_receive_from = 3306
+                  
+                  cmd = ["ssh", "-i", f"{EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH}", "-N", "-L",
+                         f"{local_port_to_send_from}:{RDS_MYSQL_HOST}:{local_port_to_receive_from}",
+                         f"{EC2_BASTION_SERVER_SSH_USER}@{EC2_BASTION_SERVER_PUBLIC_IP}"]
+                  print(f"Conection started: ")
                   subprocess.call(
                         cmd
                   )
