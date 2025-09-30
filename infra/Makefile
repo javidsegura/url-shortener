@@ -1,4 +1,4 @@
-.PHONY: help install up down output
+.PHONY: help install up down output extract-db-credentials
 
 # Colors for output
 RED = \033[31m
@@ -24,7 +24,8 @@ TERRAFORM_SET_UP_PATH=terraform/set-up
 
 # SCRIPTS
 SYNC_SCRIPT_PATH = scripts.output_redirection.main
-AWS_SECRETS_MANAGER_REGION  = us-east-1
+CONNECTION_SCRIPT_PATH = scripts.resource_connections.create_connection
+AWS_SECRETS_MANAGER_REGION=us-east-1
 
 help: ## Show this help message
 	@echo "$(BLUE)Available commands:$(RESET)"
@@ -101,33 +102,30 @@ sync_ansible_inventory: ## ## Inject tf outputs into ansible
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --ansible-inventory-path $(ANSIBLE_INVENTORY_FILE_PATH)
-
-
 sync_envs: 
 	$(MAKE) sync_backend_env
 	$(MAKE) sync_frontend_env
-
 sync_all: ## Syncs tf output in dotenvs (backend and frontend) and ansible
 	$(MAKE) sync_envs
 	$(MAKE) sync_ansible_inventory
 
 extract-db-credentials:
-	python3 -m scripts.private_connections.extract_db_credentials\
+	python3 -m scripts.resource_connections.extract_db_credentials \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --region-name $(AWS_SECRETS_MANAGER_REGION)
 
 connection-ssh-web-server: ## Send TCP traffic to port 22 in remote host 
-	python3 -m scripts.private_connections.create_connection \
+	python3 -m $(CONNECTION_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --type-of-connection ssh
 connection-http-traffic-web-server: ## SSH tunnel between local HTTP port and instance HTTP port
-	python3 -m scripts.private_connections.create_connection \
+	python3 -m $(CONNECTION_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --type-of-connection web-serving
 connection-db: ## SSH tunnel between local MySQL port and instance MySQL port
-	python3 -m scripts.private_connections.create_connection \
+	python3 -m $(CONNECTION_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --type-of-connection db

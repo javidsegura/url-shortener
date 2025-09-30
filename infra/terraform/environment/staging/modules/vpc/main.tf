@@ -124,6 +124,10 @@ resource "aws_instance" "nat_instance" {
               EOF
 
   depends_on = [aws_internet_gateway.public_IGW]
+
+  tags = {
+    Name = "NAT instance"
+  }
 }
 
 resource "aws_eip" "nat_eip" {
@@ -203,3 +207,16 @@ resource "aws_security_group" "database_sg" {
 }
 
 
+# S3 VPC Gateway Endpoint
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id       = aws_vpc.main_vpc.id
+  service_name = "com.amazonaws.${var.main_region}.s3"
+  
+  route_table_ids = [
+    aws_route_table.private_subnet_route_table.id
+  ]
+  
+  tags = {
+    Name = "S3 Gateway Endpoint"
+  }
+}

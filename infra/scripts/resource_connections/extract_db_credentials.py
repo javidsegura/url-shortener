@@ -1,7 +1,6 @@
 import argparse
 import boto3
 import json
-import os
 import subprocess
 
 def extract_terraform_outputs(terraform_dir: str):

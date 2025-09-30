@@ -15,7 +15,7 @@ class FrontendInjector:
                   return {"VITE_BASE_URL": "http://localhost/api/"}
             elif self.environment == "staging":
                   server_ip = ansible_outputs.get("EC2_APP_SERVER_PRIVATE_IP")
-                  return {"VITE_BASE_URL": f"http://{server_ip}/api/"}
+                  return {"VITE_BASE_URL": "http://localhost:8080/api/"}
             elif self.environment == "production":
                   server_ip = ansible_outputs.get("EC2_APP_SERVER_PUBLIC_IP")
                   return {"VITE_BASE_URL": f"http://{server_ip}/api/"}

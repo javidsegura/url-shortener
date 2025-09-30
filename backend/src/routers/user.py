@@ -73,6 +73,7 @@ async def create_presigned_url_profile_pic_endpoint(
 			},
 			ExpiresIn=3600,
 		)
+		print(f"Sucesfully created presigned url {presigned_url}")
 		return {"presigned_url": presigned_url, "s3_file_name": s3_file_name}
 	except Exception as e:
 		print(f"Exception in: {e}")

@@ -82,6 +82,22 @@ class ConnectionEstabisher():
             if self.environment == "production":
                   raise ValueError("Web served for production is served by accessing the web server public ip. Theres no set-up to be done \
                         for the connection")
+            elif self.environment == "staging":
+                  EC2_BASTION_SERVER_SSH_USER = self.terraform_outputs.EC2_BASTION_SERVER_SSH_USER
+                  EC2_BASTION_SERVER_PUBLIC_IP = self.terraform_outputs.EC2_BASTION_SERVER_PUBLIC_IP
+                  EC2_APP_SERVER_PRIVATE_IP = self.terraform_outputs.EC2_APP_SERVER_PRIVATE_IP
+                  EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH = self.terraform_outputs.EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH
+                  local_port_to_send_from = 8080
+                  local_port_to_receive_from = 80
+
+                  cmd = ["ssh", "-i", f"{EC2_SERVERS_SSH_PRIVATE_KEY_FILE_PATH}", "-N", "-L",
+                         f"{local_port_to_send_from}:{EC2_APP_SERVER_PRIVATE_IP}:{local_port_to_receive_from}",
+                         f"{EC2_BASTION_SERVER_SSH_USER}@{EC2_BASTION_SERVER_PUBLIC_IP}"]
+
+                  print(f"Conection started for web serving, access: http://localhost:{local_port_to_send_from}: ")
+                  subprocess.call(
+                        cmd
+                  )
             else:
                   raise ValueError("Environment must be production or staging")
       def _handle_db_connection(self):
@@ -97,7 +113,7 @@ class ConnectionEstabisher():
                          f"{local_port_to_send_from}:{RDS_MYSQL_HOST}:{local_port_to_receive_from}",
                          f"{EC2_APP_SERVER_SSH_USER}@{EC2_APP_SERVER_PUBLIC_IP}"]
 
-                  print(f"Conection started: ")
+                  print(f"Conection started for db at port {local_port_to_send_from}: ")
                   subprocess.call(
                         cmd
                   )
