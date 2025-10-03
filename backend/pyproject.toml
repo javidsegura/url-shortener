@@ -1,5 +1,5 @@
 [project]
-name = "URL_shortener"
+name = "url_shortener"
 version = "0.1.0"
 requires-python = ">=3.8"
 dependencies = [
@@ -31,12 +31,12 @@ dev = [
       "cryptography",
       "paramiko"
 ]
-test = [
+tests = [
       "pytest",
       "pytest-asyncio",
       "pytest-mock",
-      "httpx",
       "pytest-cov",
+      "httpx",
       "faker",
       "factory-boy"
 ]
@@ -46,8 +46,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 
-[tool.setuptools]
-package-dir = {"" = "src"}
+[tool.setuptools.packages.find]
+where = ["src"]
 
 
 [tool.ruff]

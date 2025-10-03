@@ -24,7 +24,7 @@ help: ## Show this help message
 # 0) Set-up
 install: ## Install backend dependencies
 	python3.11 -m venv $(VENV)
-	$(VENV_ACTIVATE) && pip3 install -e ".[dev]"
+	$(VENV_ACTIVATE) && pip3 install -e ".[dev, tests]"
 	$(VENV_ACTIVATE) && alembic init migrations || echo "alembic init already started"
 
 # 1) Boot-up 
@@ -101,3 +101,10 @@ check_enviroment_variables:
 		exit 1; \
 	fi
 	echo "Environment is: $(ENVIRONMENT)"
+
+# Tests
+pytest-run:
+	$(VENV_ACTIVATE) && pytest -s -vv \
+					--cov=url_shortener \
+					--cov-report= \
+					test/
