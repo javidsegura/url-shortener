@@ -1,12 +1,10 @@
 import pytest
 
-from url_shortener.services.shortening import RandomStringCreator
-from unittest.mock import AsyncMock, patch
-
-REDIS_CLIENT_PATH = "url_shortener.core.clients.redis_client"
 
 @pytest.mark.asyncio
-async def check_random_string(get_redis_client):
+async def test_check_random_string(get_redis_client):
+    from url_shortener.services.shortening import RandomStringCreator
+
     max_length = 8
     fake_url = "http://www.faker.com"
     minutes_until_expiration = 10
@@ -16,7 +14,7 @@ async def check_random_string(get_redis_client):
                                     minutes_until_expiration=minutes_until_expiration
     )
 
-    assert len(shortened_url) < max_length
+    assert len(shortened_url) <= max_length
 
 
 

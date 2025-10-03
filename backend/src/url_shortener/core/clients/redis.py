@@ -1,11 +1,13 @@
 import redis.asyncio as r
 from redis.client import Redis
 
-from url_shortener.core.settings.app_settings import app_settings
+from url_shortener.core.settings import app_settings
+
 
 class RedisClient:
 	def __init__(self) -> None:
 		self._client = None
+
 
 	async def connect(self) -> Redis:
 		if not self._client:

@@ -16,7 +16,7 @@ import threading
 from abc import ABC, abstractmethod
 from hashlib import sha256
 
-from url_shortener.core.clients import redis_client
+from url_shortener.core.clients.redis import redis_client
 from .concrete_implementations import Shortener, RandomString
 
 class Creator(ABC):

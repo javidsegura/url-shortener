@@ -1,7 +1,6 @@
 import os
 
-from dotenv import load_dotenv
-from url_shortener.core.clients.aws_clients import fetch_secret
+from url_shortener.core.clients.aws import fetch_secret
 
 class Settings:
 	"""Application settings loaded from environment variables."""
@@ -17,7 +16,7 @@ class Settings:
 		self.MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
 		self.MYSQL_SYNC_DRIVER = os.getenv("MYSQL_SYNC_DRIVER")
 		self.MYSQL_ASYNC_DRIVER = os.getenv("MYSQL_ASYNC_DRIVER")
-		if "dev" not in ENVIRONMENT:
+		if ENVIRONMENT != "dev":
 			self.MYSQL_HOST = os.getenv("RDS_MYSQL_HOST")
 
 			secret_key = os.getenv("RDS_DB_CREDENTIALS_KEY")
@@ -58,6 +57,7 @@ class Settings:
 		
 		if missing_vars:
 			raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
+
 
 
 app_settings = Settings()

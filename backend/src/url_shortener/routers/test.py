@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 from url_shortener.dependencies import get_current_user
 from url_shortener.database.CRUD.user import read_user
-from url_shortener.database import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 from url_shortener.dependencies import get_db
 from url_shortener.schemas.endpoints import GetUserDataResponse
 

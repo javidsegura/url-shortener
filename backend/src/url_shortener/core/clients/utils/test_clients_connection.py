@@ -1,8 +1,10 @@
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select  # Important for async queries
 
-from core import redis_client
-from database import AsyncSession, User, get_db
+from url_shortener.core.clients import redis_client
+from url_shortener.dependencies import get_db
+
 
 
 # Redis

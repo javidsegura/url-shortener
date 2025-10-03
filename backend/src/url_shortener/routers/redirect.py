@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from starlette.responses import RedirectResponse
 
 
-from url_shortener.core.clients.redis_client import redis_client
+from url_shortener.core.clients import redis_client
 from url_shortener.database import AsyncSession, increment_link_count
 from url_shortener.dependencies import get_db
 

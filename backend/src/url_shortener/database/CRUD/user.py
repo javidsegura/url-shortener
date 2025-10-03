@@ -1,7 +1,9 @@
 from sqlalchemy import select
 
-from database import AsyncSession, User
-from schemas import CreateUserRequest
+from url_shortener.database import User
+from url_shortener.schemas.endpoints import CreateUserRequest
+from sqlalchemy.ext.asyncio import AsyncSession
+
 
 
 async def create_user(db: AsyncSession, user_data: CreateUserRequest) -> User:

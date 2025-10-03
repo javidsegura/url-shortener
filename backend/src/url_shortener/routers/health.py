@@ -3,7 +3,7 @@ from typing import Annotated, Dict
 from fastapi import APIRouter, Depends, Request, status
 
 from url_shortener.core.clients.utils.test_clients_connection import test_db_connection, test_redis_connection
-from url_shortener.database import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 from url_shortener.dependencies.database import get_db
 
 router = APIRouter(prefix="/health")

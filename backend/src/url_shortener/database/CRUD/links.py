@@ -1,10 +1,11 @@
 from typing import List
 
 from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database import AsyncSession
 from ..generated_models import Link
-from schemas import URLShorteningDBStore
+from url_shortener.schemas.db import URLShorteningDBStore
+
 
 
 async def create_link(db: AsyncSession, url_info: URLShorteningDBStore) -> Link:

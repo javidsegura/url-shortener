@@ -2,14 +2,15 @@ from typing import Annotated, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from url_shortener.dependencies import get_current_user
-from url_shortener.core.settings import app_settings
+from sqlalchemy.ext.asyncio import AsyncSession
+from url_shortener.dependencies import get_current_user, get_db
+from url_shortener.core.settings import get_settings
 from url_shortener.core.clients import redis_client, s3_client
 from url_shortener.database.CRUD.user import create_user, read_user
+from url_shortener.database import Link, User, get_list_of_links
 
-from database import AsyncSession, Link, User, get_db, get_list_of_links
-from database.CRUD.user import create_user, read_user
-from schemas import CreateUserRequest, UploadProfilePicRequest, ListOfLinksResponse, GetUserDataResponse
+from url_shortener.schemas.endpoints import CreateUserRequest, UploadProfilePicRequest, ListOfLinksResponse, GetUserDataResponse
+app_settings = get_settings()
 
 router = APIRouter(prefix="/user")
 

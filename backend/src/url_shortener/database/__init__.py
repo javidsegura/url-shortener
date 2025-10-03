@@ -1,3 +1,3 @@
 from .CRUD import *
-from .database import AsyncSession, AsyncSessionLocal
+from .main import AsyncSessionLocal
 from .generated_models import *

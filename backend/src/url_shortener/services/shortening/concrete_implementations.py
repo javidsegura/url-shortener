@@ -7,7 +7,6 @@ import threading
 from abc import ABC, abstractmethod
 from hashlib import sha256
 
-from core import redis_client
 
 class Shortener(ABC): # Abstract product
 	def __init__(self, 

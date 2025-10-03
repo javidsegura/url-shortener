@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from url_shortener.core.clients import redis_client
-from url_shortener.core.settings import app_settings
+from url_shortener.core.settings import get_settings
 from url_shortener.database import AsyncSession, create_link
 from url_shortener.dependencies import get_current_user, get_db
 
@@ -12,6 +12,8 @@ from url_shortener.schemas.db import URLShorteningDBStore
 from url_shortener.schemas.endpoints import DataURL, URLShorteningRequest, URLShorteningResponse
 
 from url_shortener.services.shortening import RandomStringCreator
+
+app_settings = get_settings()
 
 
 router = APIRouter(prefix="/link")
