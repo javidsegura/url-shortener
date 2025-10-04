@@ -30,8 +30,8 @@ dev = [
       "PyYAML",
       "cryptography",
       "paramiko",
-      "boto3-stubs"
-      "boto3-stubs[essential]"
+      "boto3-stubs",
+      "boto3-stubs[s3,secretsmanager]",
 ]
 tests = [
       "pytest",
@@ -40,7 +40,8 @@ tests = [
       "pytest-cov",
       "httpx",
       "faker",
-      "factory-boy"
+      "factory-boy",
+      "moto[s3,secretsmanager]"
 ]
 
 [build-system]

@@ -1,7 +1,5 @@
 import os
 
-from url_shortener.core.clients.aws import fetch_secret
-
 class Settings:
 	"""Application settings loaded from environment variables."""
 	
@@ -19,6 +17,11 @@ class Settings:
 		# Validate required environment variables
 		self._validate_required_vars()
 
+	def _extract_secret_manger_databaseb_credentials(self, secret_key):
+		from url_shortener.services.infra.secretsmanager import SecretsManager 
+		db_credentials = SecretsManager().fetch_secret(secret_key=secret_key)
+		return db_credentials
+
 	def _extract_database_variables(self):
 		self.REDIS_URL = os.getenv("REDIS_URL")
 		self.MYSQL_PORT = os.getenv("MYSQL_PORT")
@@ -32,7 +35,8 @@ class Settings:
 			if not secret_key:
 				raise ValueError("RDS db credentials key is needed!")
 			print("Secret key is: ", secret_key)
-			db_credentials = fetch_secret(secret_key=secret_key)
+
+			db_credentials = self._extract_secret_manger_databaseb_credentials(secret_key)
 			print(f"DB credentials is: {db_credentials}")
 			self.MYSQL_USER = db_credentials["username"]
 			self.MYSQL_PASSWORD = db_credentials["password"]
