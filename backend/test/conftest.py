@@ -7,8 +7,7 @@ import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
-@pytest.fixture(scope="session", autouse=True)
-def mock_environment_variables():
+def pytest_configure(config):
       """Mock all required environment variables for tests."""
 
       test_env = {
@@ -25,10 +24,31 @@ def mock_environment_variables():
             "SHORTENED_URL_LENGTH": "8",
             "MAX_MINUTES_STORAGE": "120",
       }
-      with patch.dict(os.environ, test_env, clear=False):
-            yield
+      for key, value in test_env.items():
+            os.environ[key] = value
 
-
+def pytest_unconfigure(config):
+      """
+      This hook runs after the entire test session finishes,
+      perfect for cleanup.
+      """
+      print("\nCleaning up environment variables...")
+      test_env = {
+            "ENVIRONMENT": "dev",
+            "REDIS_URL": "redis://localhost:6379/0",
+            "MYSQL_HOST": "localhost",
+            "MYSQL_PORT": "3306",
+            "MYSQL_DATABASE": "test_db",
+            "MYSQL_USER": "test_user",
+            "MYSQL_PASSWORD": "test_password",
+            "MYSQL_SYNC_DRIVER": "pymysql",
+            "MYSQL_ASYNC_DRIVER": "aiomysql",
+            "S3_MAIN_BUCKET_NAME": "test-bucket",
+            "SHORTENED_URL_LENGTH": "8",
+            "MAX_MINUTES_STORAGE": "120",
+      }
+      for key in test_env.keys():
+                  del os.environ[key]
 
 
 @pytest.fixture(scope="session", autouse=True)

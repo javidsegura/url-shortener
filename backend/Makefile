@@ -106,5 +106,5 @@ check_enviroment_variables:
 pytest-run:
 	$(VENV_ACTIVATE) && PYTEST_RUNNING=true pytest -s -vv \
 					--cov=url_shortener \
-					--cov-report= \
+					--cov-report=term-missing \
 					test/
