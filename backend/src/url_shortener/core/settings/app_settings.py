@@ -71,7 +71,11 @@ class Settings:
 		if missing_vars:
 			raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
 
+app_settings = None
 
-
-app_settings = Settings()
-print(f"SETTINGS VLAUE: {app_settings.__dict__}") ## REMOVE IN PROD
+def initialize_settings():
+	global app_settings
+	if not app_settings:
+		app_settings = Settings()
+	print(f"SETTINGS VLAUE: {app_settings.__dict__}") ## REMOVE IN PROD
+	return app_settings

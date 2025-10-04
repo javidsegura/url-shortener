@@ -12,22 +12,24 @@ from url_shortener.services.infra.s3 import PresignedUrl
 
 from url_shortener.schemas.endpoints import CreateUserRequest, UploadProfilePicRequest, ListOfLinksResponse, GetUserDataResponse
 
+# GLOBAL VARIABLES
 router = APIRouter(prefix="/user")
+verify_user_private_dependency = verify_user(user_private_route=True)
 
 
-@router.post(path="", status_code=status.HTTP_201_CREATED)
+@router.post(path="", status_code=status.HTTP_201_CREATED) # FIX: when is this used?
 async def create_user_endpoint(
 	user_data: CreateUserRequest, db: Annotated[AsyncSession, Depends(get_db)]
-) -> GetUserDataResponse:
-	user = await create_user(user_data=user_data, db=db)
-	return user
+) -> str:
+	await create_user(user_data=user_data, db=db)
+	return f"User created succesfully with id: {user_data.user_id}"
 
 
 @router.get(path="/{user_id}", status_code=status.HTTP_201_CREATED)
 async def get_user_endpoint(
 	user_id: str,
 	db: Annotated[AsyncSession, Depends(get_db)],
-	current_user: Annotated[dict, Depends(verify_user(user_specific_route=True))],
+	current_user: Annotated[dict, Depends(verify_user_private_dependency)],
 ) -> GetUserDataResponse:
 	user = await read_user(db, user_id)
 
@@ -49,7 +51,7 @@ async def get_user_endpoint(
 async def get_user_links_endpoints(
 	user_id: str,
 	db: Annotated[AsyncSession, Depends(get_db)],
-	current_user: Annotated[dict, Depends(verify_user(user_specific_route=True))],
+	current_user: Annotated[dict, Depends(verify_user_private_dependency)],
 ) -> List[ListOfLinksResponse]:
 	links = await get_list_of_links(db, current_user["uid"])
 	return links
@@ -66,7 +68,7 @@ async def create_presigned_url_profile_pic_endpoint(
 	s3_file_name = f"/users/profile-pictures/{request.file_name}"
 	try:
 		presigned_url_creator = PresignedUrl(s3_client=s3_client)
-		presigned_url = presigned_url_creator.get_presigned_url(
+		presigned_url = presigned_url_creator.put_presigned_url(
 						s3_bucket_name=app_settings.S3_MAIN_BUCKET_NAME,
 						key=s3_file_name,
 						ContentType=request.content_type

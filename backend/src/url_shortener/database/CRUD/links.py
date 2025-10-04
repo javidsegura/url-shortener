@@ -4,7 +4,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..generated_models import Link
-from url_shortener.schemas.db import URLShorteningDBStore
+from url_shortener.schemas.db_CRUD import URLShorteningDBStore
 
 
 

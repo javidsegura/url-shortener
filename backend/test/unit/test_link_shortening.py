@@ -12,7 +12,8 @@ from url_shortener.services.shortening import BaseCreator, RandomStringCreator, 
     EncryptedStringCreator,
     CounterEncodedStringCreator
 ])
-async def test_string_creator_healthy_input(get_redis_client: AsyncMock, creator_class: BaseCreator):
+async def test_string_creator_healthy_input(get_mock_redis_client: AsyncMock, 
+                                            creator_class: BaseCreator):
 
     max_length = 8
     fake_url = "http://www.faker.com"
@@ -27,7 +28,7 @@ async def test_string_creator_healthy_input(get_redis_client: AsyncMock, creator
     for char in shortened_url:
         assert char in expected_chars
     assert len(shortened_url) <= max_length
-    get_redis_client.set.assert_awaited_once_with(
+    get_mock_redis_client.set.assert_awaited_once_with(
         name=shortened_url,
         value=fake_url,
         ex=minutes_until_expiration * 60
@@ -41,8 +42,7 @@ async def test_string_creator_healthy_input(get_redis_client: AsyncMock, creator
     EncryptedStringCreator,
     CounterEncodedStringCreator
 ])
-async def test_string_creator_wrong_url_length_input(get_redis_client: AsyncMock, creator_class):
-    from url_shortener.services.shortening import RandomStringCreator
+async def test_string_creator_wrong_url_length_input(get_mock_redis_client: AsyncMock, creator_class):
 
     max_length = 3
     fake_url = "http://www.faker.com"
@@ -59,8 +59,7 @@ async def test_string_creator_wrong_url_length_input(get_redis_client: AsyncMock
     EncryptedStringCreator,
     CounterEncodedStringCreator
 ])
-async def test_string_creator_wrong_url_type_input(get_redis_client: AsyncMock, creator_class):
-    from url_shortener.services.shortening import RandomStringCreator
+async def test_string_creator_wrong_url_type_input(get_mock_redis_client: AsyncMock, creator_class):
 
     max_length = 10
     fake_url = None
@@ -77,8 +76,7 @@ async def test_string_creator_wrong_url_type_input(get_redis_client: AsyncMock, 
     EncryptedStringCreator,
     CounterEncodedStringCreator
 ])
-async def test_string_creator_wrong_minute_until_expiration_input(get_redis_client: AsyncMock, creator_class):
-    from url_shortener.services.shortening import RandomStringCreator
+async def test_string_creator_wrong_minute_until_expiration_input(get_mock_redis_client: AsyncMock, creator_class):
 
     max_length = 10
     fake_url = "http://www.faker.com"

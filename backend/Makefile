@@ -1,4 +1,4 @@
-.PHONY: help dev dev-debug install db-models lint lint-check test 
+.PHONY: help dev dev-debug install db-models lint lint-check pytest-run 
 
 # Colors for output
 RED = \033[31m
@@ -104,7 +104,7 @@ check_enviroment_variables:
 
 # Tests
 pytest-run:
-	$(VENV_ACTIVATE) && PYTEST_RUNNING=true pytest -s -vv \
+	$(VENV_ACTIVATE) && pytest -s -vv \
 					--cov=url_shortener \
 					--cov-report=term-missing \
 					test/unit/

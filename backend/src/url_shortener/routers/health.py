@@ -11,7 +11,7 @@ router = APIRouter(prefix="/health")
 
 @router.get(path="", status_code=status.HTTP_200_OK)
 async def cheeck_backend_health_endpoint(
-	request: Request, db: Annotated[AsyncSession, Depends(get_db)]
+	db: Annotated[AsyncSession, Depends(get_db)]
 ) -> Dict:
 	"""
 	You could have here the response schema to be service with variables\
@@ -20,4 +20,7 @@ async def cheeck_backend_health_endpoint(
 
 	redis_status = await test_redis_connection()
 	db_status = await test_db_connection(db=db)
-	return {"services": {"fastapi": True, "redis": redis_status, "db": db_status}}
+	return {"services": {"fastapi": True, 
+				  "redis": redis_status,
+				   "db": db_status,
+				   "aws": True}} # Add actual aws test

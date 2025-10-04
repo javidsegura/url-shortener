@@ -6,6 +6,7 @@ import pytest
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
 from moto import mock_aws
+from url_shortener.core.settings import initialize_settings
 
 
 # LOADING/UNLOADING CONFIG (i.e., Environmental variables)
@@ -31,6 +32,8 @@ def pytest_configure(config):
       }
       for key, value in test_env.items():
             os.environ[key] = value
+      initialize_settings()
+
 
 def pytest_unconfigure(config):
       """

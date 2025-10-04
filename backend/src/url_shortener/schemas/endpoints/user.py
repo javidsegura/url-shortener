@@ -19,10 +19,9 @@ class GetUserDataResponse(BaseModel):
 	user_id: str
 	displayable_name : str
 	email : str
-	timeRegistered : datetime
+	timeRegistered : str
 	profile_pic_object_name : str
 	country : str
 	isAdmin : int
 	presigned_url_profile_pic: str
 	
-	model_config = ConfigDict(from_attributes=True)

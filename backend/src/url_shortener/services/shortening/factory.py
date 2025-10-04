@@ -16,11 +16,14 @@ import threading
 from abc import ABC, abstractmethod
 from hashlib import sha256
 
-from url_shortener.core.clients.redis import redis_client
+from url_shortener.core.clients.redis import initialize_redis_client
 from .concrete_implementations import Shortener, RandomString, EncryptedString, CounterEncodedString
-from url_shortener.core.settings import app_settings
+from url_shortener.core.settings import initialize_settings
 
 class BaseCreator(ABC):
+	def __init__(self) -> None:
+		self.redis_client = initialize_redis_client()
+		self.app_settings = initialize_settings()
 	@abstractmethod
 	def factory_method(self) -> Shortener:
 		pass
@@ -28,7 +31,7 @@ class BaseCreator(ABC):
 								    original_url: str,
 								    shortened_url: str,
 								    minutes_until_expiration: int):
-		redis = await redis_client.get_client()
+		redis = await self.redis_client.get_client()
 		await redis.set(
 			name=shortened_url, 
 			value=original_url, 
@@ -41,8 +44,8 @@ class BaseCreator(ABC):
 	async def shorten_url(self, original_url:str, minutes_until_expiration: int = 10) -> str:
 		if not isinstance(original_url, str):
 			raise ValueError(f"Original url must be an str objeect. Currently is: {type(original_url)}")
-		if not (app_settings.MIN_MINUTES_STORAGE <= minutes_until_expiration <= app_settings.MAX_MINUTES_STORAGE):
-			raise ValueError(f"Minutes until experiation must be >= {app_settings.MIN_MINUTES_STORAGE} or <= {app_settings.MAX_MINUTES_STORAGE}. Currently is {minutes_until_expiration}")
+		if not (self.app_settings.MIN_MINUTES_STORAGE <= minutes_until_expiration <= self.app_settings.MAX_MINUTES_STORAGE):
+			raise ValueError(f"Minutes until experiation must be >= {self.app_settings.MIN_MINUTES_STORAGE} or <= {self.app_settings.MAX_MINUTES_STORAGE}. Currently is {minutes_until_expiration}")
 		shortener = self.factory_method()
 		shortened_url = shortener.shorten_url(original_url)
 		await self._store_shortened_url_in_redis(
@@ -53,16 +56,19 @@ class BaseCreator(ABC):
 
 class RandomStringCreator(BaseCreator):
 	def __init__(self, max_length: int) -> None:
+		super().__init__()
 		self.max_length = max_length
 	def factory_method(self) -> Shortener:
 		return RandomString(self.max_length)
 class EncryptedStringCreator(BaseCreator):
 	def __init__(self, max_length: int) -> None:
+		super().__init__()
 		self.max_length = max_length
 	def factory_method(self) -> Shortener:
 		return EncryptedString(self.max_length)
 class CounterEncodedStringCreator(BaseCreator):
 	def __init__(self, max_length: int) -> None:
+		super().__init__()
 		self.max_length = max_length
 	def factory_method(self) -> Shortener:
 		return CounterEncodedString(self.max_length)

@@ -6,8 +6,8 @@ from pydantic import BaseModel
 class DataURL(BaseModel):
 	short_url: str
 	original_url: str
-	created_at: datetime
-	expires_at: datetime
+	created_at: str
+	expires_at: str
 
 
 class URLShorteningResponse(BaseModel):
@@ -17,7 +17,7 @@ class URLShorteningResponse(BaseModel):
 
 class URLShorteningRequest(BaseModel):
 	original_url: str
-	expires_in: int
+	expires_in_min: int
 
 
 class ListOfLinksResponse(BaseModel):
