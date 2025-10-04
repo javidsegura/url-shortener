@@ -18,7 +18,6 @@ def initialize_db_engine():
 		)
 
 
-
 	# Production engine configuration
 	engine = create_async_engine(
 		DATABASE_URL,

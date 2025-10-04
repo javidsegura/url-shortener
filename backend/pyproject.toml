@@ -29,7 +29,9 @@ dev = [
       "ansible-core",
       "PyYAML",
       "cryptography",
-      "paramiko"
+      "paramiko",
+      "boto3-stubs"
+      "boto3-stubs[essential]"
 ]
 tests = [
       "pytest",

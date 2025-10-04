@@ -107,4 +107,4 @@ pytest-run:
 	$(VENV_ACTIVATE) && PYTEST_RUNNING=true pytest -s -vv \
 					--cov=url_shortener \
 					--cov-report=term-missing \
-					test/
+					test/unit

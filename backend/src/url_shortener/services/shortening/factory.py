@@ -18,6 +18,7 @@ from hashlib import sha256
 
 from url_shortener.core.clients.redis import redis_client
 from .concrete_implementations import Shortener, RandomString, EncryptedString, CounterEncodedString
+from url_shortener.core.settings import app_settings
 
 class BaseCreator(ABC):
 	@abstractmethod
@@ -40,8 +41,8 @@ class BaseCreator(ABC):
 	async def shorten_url(self, original_url:str, minutes_until_expiration: int = 10) -> str:
 		if not isinstance(original_url, str):
 			raise ValueError(f"Original url must be an str objeect. Currently is: {type(original_url)}")
-		if not (5 <= minutes_until_expiration <= 60):
-			raise ValueError(f"Minutes until experiation must be >= 5 or <= 60. Currently is {minutes_until_expiration}")
+		if not (app_settings.MIN_MINUTES_STORAGE <= minutes_until_expiration <= app_settings.MAX_MINUTES_STORAGE):
+			raise ValueError(f"Minutes until experiation must be >= {app_settings.MIN_MINUTES_STORAGE} or <= {app_settings.MAX_MINUTES_STORAGE}. Currently is {minutes_until_expiration}")
 		shortener = self.factory_method()
 		shortened_url = shortener.shorten_url(original_url)
 		await self._store_shortened_url_in_redis(

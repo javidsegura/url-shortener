@@ -6,20 +6,29 @@ class Settings:
 	"""Application settings loaded from environment variables."""
 	
 	def __init__(self):
-		ENVIRONMENT = os.getenv("ENVIRONMENT", "dev").lower()
+		self.ENVIRONMENT = os.getenv("ENVIRONMENT").lower()
+		print(f"ENVIRONMENT IS: {self.ENVIRONMENT}")
+		self._extract_all_variables()
+	
+	def _extract_all_variables(self):
 
-		print(f"ENVIRONMENT IS: {ENVIRONMENT}")
+		self._extract_database_variables()
+		self._extract_aws_variables()
+		self._extract_app_logic_variables()
+		
+		# Validate required environment variables
+		self._validate_required_vars()
 
-		# Database configuration
+	def _extract_database_variables(self):
 		self.REDIS_URL = os.getenv("REDIS_URL")
 		self.MYSQL_PORT = os.getenv("MYSQL_PORT")
 		self.MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
 		self.MYSQL_SYNC_DRIVER = os.getenv("MYSQL_SYNC_DRIVER")
 		self.MYSQL_ASYNC_DRIVER = os.getenv("MYSQL_ASYNC_DRIVER")
-		if ENVIRONMENT != "dev":
-			self.MYSQL_HOST = os.getenv("RDS_MYSQL_HOST")
+		if self.ENVIRONMENT != "dev":
+			self.MYSQL_HOST = os.getenv("RDS_MYSQL_HOST") 
 
-			secret_key = os.getenv("RDS_DB_CREDENTIALS_KEY")
+			secret_key = os.getenv("SECRETS_MANAGER_DB_CREDENTIALS_KEY")
 			if not secret_key:
 				raise ValueError("RDS db credentials key is needed!")
 			print("Secret key is: ", secret_key)
@@ -31,23 +40,23 @@ class Settings:
 			self.MYSQL_HOST = os.getenv("MYSQL_HOST")
 			self.MYSQL_USER = os.getenv("MYSQL_USER")
 			self.MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
-		
-		# S3 configuration
-		self.S3_BUCKET_NAME = os.getenv("S3_MAIN_BUCKET_NAME")
-		
-		# Application settings with defaults
+
+	def _extract_aws_variables(self):
+		self.S3_MAIN_BUCKET_NAME = os.getenv("S3_MAIN_BUCKET_NAME")
+
+	def _extract_app_logic_variables(self):
 		self.SHORTENED_URL_LENGTH = int(os.getenv("SHORTENED_URL_LENGTH", "8"))
-		self.MAX_MINUTES_STORAGE = int(os.getenv("MAX_MINUTES_STORAGE", "120"))
+		self.MAX_MINUTES_STORAGE = int(os.getenv("MAX_MINUTES_STORAGE", "60"))
+		self.MIN_MINUTES_STORAGE = int(os.getenv("MIN_MINUTES_STORAGE", "5"))
 		
-		# Validate required environment variables
-		self._validate_required_vars()
+		
 	
 	def _validate_required_vars(self):
 		"""Validate that all required environment variables are set."""
 		required_vars = [
 			"REDIS_URL", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_HOST",
 			"MYSQL_PORT", "MYSQL_DATABASE", "MYSQL_SYNC_DRIVER", 
-			"MYSQL_ASYNC_DRIVER", "S3_BUCKET_NAME"
+			"MYSQL_ASYNC_DRIVER", "S3_MAIN_BUCKET_NAME"
 		]
 		
 		missing_vars = []

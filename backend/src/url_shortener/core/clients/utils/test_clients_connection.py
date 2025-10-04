@@ -2,10 +2,11 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select  # Important for async queries
 
-from url_shortener.core.clients import redis_client
+from url_shortener.core.clients.redis import redis_client
 from url_shortener.dependencies import get_db
+from url_shortener.database import User
 
-
+# FIX: these tests need to be redesigned 
 
 # Redis
 async def test_redis_connection() -> bool:

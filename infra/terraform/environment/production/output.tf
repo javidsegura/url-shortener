@@ -16,7 +16,7 @@ output "ec2_app_server_ssh_private_key_file_path" {
   value = abspath(pathexpand(var.ssh_key_local_path))
 }
 
-output "rds_db_credentials_key" {
+output "secrets_manager_db_credentials_key" {
   value = module.rds.db_crendentials_key
 }
 

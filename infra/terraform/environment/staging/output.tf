@@ -16,7 +16,7 @@ output "ec2_servers_ssh_private_key_file_path" {
 output "s3_main_bucket_name" {
   value = module.s3.s3_bucket_name
 }
-output "rds_db_credentials_key" {
+output "secrets_manager_db_credentials_key" {
   value = module.rds.db_crendentials_key
 }
 

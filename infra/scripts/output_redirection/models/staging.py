@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 class StagingBackendOutputs(BaseModel):
       S3_MAIN_BUCKET_NAME: str
-      RDS_DB_CREDENTIALS_KEY: str
+      SECRETS_MANAGER_DB_CREDENTIALS_KEY: str
       RDS_MYSQL_HOST: str # Handle the renaming with a factory for each enviroment in the settings class
 
 
