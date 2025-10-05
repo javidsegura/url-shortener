@@ -15,6 +15,5 @@ class TestHealthEndpoint:
             data = response.json()
             assert data["services"] == {"fastapi": True,
                                         "redis": True,
-                                        "db": True,
-                                        "aws": True}
+                                        "db": True}
             get_mock_redis_client.ping.assert_awaited_once()
