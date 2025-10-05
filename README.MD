@@ -123,8 +123,10 @@ You'll need to create and populate `.env` files for both the backend and fronten
 
 3. **Note:** The file must exist at this path, but for the initial setup, you **do not need to fill in any environmental variables** inside it.
 
-### 3. Start app locally
+### 3. Start app locally 
 ```bash
+
+# For all of these commands you need the docker daemon to be running in the background!
 make dev-start # Starts the entire local dev environment
 dev-stop # Kills the entire local dev environment
 dev-restart-docker-compose # Useful for debugging backend/frontend with hot reloading
@@ -132,7 +134,7 @@ dev-restart-docker-compose # Useful for debugging backend/frontend with hot relo
 
 ### 4. Run tests with:
 ```bash
-make -C backend pytest-run
+make -C backend pytest-run # Coverage will appear in stdout
 ```
 
 # ENTIRE TECH STACK

@@ -48,10 +48,6 @@ dev-stop: ## Stop development environment
 	pkill -f "vite" || true
 	pkill -f "npm run dev" || true
 	$(MAKE) delete_ci_artifacts
-dev-destroy-infra:
-	$(MAKE) check_enviroment_variables
-	@echo "$(YELLOW)Stopping development environment...$(RESET)"
-	$(MAKE) -C infra terraform-stop 
 dev-restart-docker-compose: ## Restart docker compose for dev
 	@echo "Restarting docker compose"
 	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH)  docker compose -f docker-compose.yml -f docker-compose.dev.yml -p $(PROJECT_NAME) down -v
@@ -60,6 +56,10 @@ dev-restart-docker-compose: ## Restart docker compose for dev
 	pkill -f "npm run dev" || true
 	docker volume prune -f
 	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f docker-compose.yml -f docker-compose.dev.yml -p $(PROJECT_NAME) up --build 
+dev-destroy-infra: ## Destroy terraform infra for development environmnet
+	$(MAKE) check_enviroment_variables
+	@echo "$(YELLOW)Stopping development environment...$(RESET)"
+	$(MAKE) -C infra terraform-stop 
 
 
 

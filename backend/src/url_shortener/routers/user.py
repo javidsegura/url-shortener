@@ -14,6 +14,10 @@ from url_shortener.services.infra.s3 import PresignedUrl
 
 from url_shortener.schemas.endpoints import CreateUserRequest, UploadProfilePicRequest, ListOfLinksResponse, GetUserDataResponse
 
+import logging 
+logger = logging.getLogger(__name__)
+
+
 # GLOBAL VARIABLES
 router = APIRouter(prefix="/user")
 verify_user_private_dependency = verify_user(user_private_route=True)
@@ -44,7 +48,7 @@ async def get_user_endpoint(
 		)
 		return GetUserDataResponse(**user.__dict__, presigned_url_profile_pic=presigned_url)
 	except Exception as e:
-		print("=> ERROR WITH AWS PRESIGNED URL")
+		logger.debug("=> ERROR WITH AWS PRESIGNED URL")
 		traceback.print_exc()
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -97,10 +101,6 @@ async def get_user_links_endpoints(
 async def create_presigned_url_profile_pic_endpoint(
 	request: UploadProfilePicRequest,
 ) -> Dict:
-	"""
-	Potential bug: overwriting an existing image uploaded by someone else.
-	Solution: check name doesnt exist before + add random postfix
-	"""
 	s3_file_name = f"/users/profile-pictures/{request.file_name}"
 	try:
 		presigned_url_creator = PresignedUrl()
@@ -110,10 +110,10 @@ async def create_presigned_url_profile_pic_endpoint(
 						ContentType=request.content_type
 						
 		)
-		print(f"Sucesfully created presigned url {presigned_url}")
+		logger.debug(f"Sucesfully created presigned url {presigned_url}")
 		return {"presigned_url": presigned_url, "s3_file_name": s3_file_name}
 	except Exception as e:
-		print(f"Exception in: {e}")
+		logger.debug(f"Exception in: {e}")
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
 		)

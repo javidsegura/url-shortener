@@ -22,5 +22,4 @@ async def cheeck_backend_health_endpoint(
 	db_status = await test_db_connection(db=db)
 	return {"services": {"fastapi": True, 
 				  "redis": redis_status,
-				   "db": db_status,
-				   "aws": True}} # Add actual aws test
+				   "db": db_status}} 

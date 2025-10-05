@@ -62,7 +62,7 @@ class CounterEncodedString(Shortener): # Concrete product 3
 		# Pad or truncate to desired max_length
 		return result.zfill(self.max_length)[: self.max_length]
 
-class Counter:  # FIX IN PROD: Counter should come from db, in order to not collide against existing keys after restarting app
+class Counter:  
 	def __init__(self) -> None:
 		self._value = 0
 		self._lock = threading.Lock()

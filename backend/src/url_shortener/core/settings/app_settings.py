@@ -1,6 +1,9 @@
 import os
 from pathlib import Path
 
+
+i
+
 class Settings:
 	"""Application settings loaded from environment variables."""
 	
@@ -8,7 +11,6 @@ class Settings:
 		self.ENVIRONMENT = os.getenv("ENVIRONMENT").lower()
 
 
-		print(f"ENVIRONMENT IS: {self.ENVIRONMENT}")
 		self._extract_all_variables()
 	
 	def _extract_all_variables(self):
@@ -37,10 +39,8 @@ class Settings:
 			secret_key = os.getenv("SECRETS_MANAGER_DB_CREDENTIALS_KEY")
 			if not secret_key:
 				raise ValueError("RDS db credentials key is needed!")
-			print("Secret key is: ", secret_key)
 
 			db_credentials = self._extract_secret_manger_databaseb_credentials(secret_key)
-			print(f"DB credentials is: {db_credentials}")
 			self.MYSQL_USER = db_credentials["username"]
 			self.MYSQL_PASSWORD = db_credentials["password"]
 		else:
@@ -80,5 +80,4 @@ def initialize_settings():
 	global app_settings
 	if not app_settings:
 		app_settings = Settings()
-	print(f"SETTINGS VLAUE: {app_settings.__dict__}") ## REMOVE IN PROD
 	return app_settings

@@ -23,11 +23,11 @@ async def redirect_endpoint(
 		og_url = await redis.get(shortened_url)
 		if not og_url:
 			raise HTTPException(
-				status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+				status_code=status.HTTP_404_NOT_FOUND,
 			)
 		# 2) Autoincrment
-		await increment_link_count(db, shortened_url)
 
+		await increment_link_count(db, shortened_url)
 		# 2) Redirect
 		return RedirectResponse(url=og_url, status_code=308)
 	except Exception as e:

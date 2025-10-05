@@ -14,6 +14,9 @@ from url_shortener.schemas.endpoints import DataURL, URLShorteningRequest, URLSh
 
 from url_shortener.services.shortening import RandomStringCreator
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 
 router = APIRouter(prefix="/link")
@@ -27,7 +30,7 @@ async def shortern_link(
 	shortening_request: URLShorteningRequest,
 ) -> (
 	Dict[str, str]
-):  # EXPIRES_AT is some app config that frontend fetches to the backend at start_up
+):  
 	"""
 	1) Fetch user config
 	2) Create shortened version
@@ -40,7 +43,7 @@ async def shortern_link(
 	try: 
 		if shortening_request.expires_in_min > app_settings.MAX_MINUTES_STORAGE:
 			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Expiration time exceeds maximum allowed")
-		creator = RandomStringCreator(max_length=app_settings.SHORTENED_URL_LENGTH) #FIX: allow for user choice in input
+		creator = RandomStringCreator(max_length=app_settings.SHORTENED_URL_LENGTH) # Devs can change this algorithm if they find it conventient
 
 		shortened_url = await creator.shorten_url(
 							original_url=shortening_request.original_url,
@@ -50,10 +53,10 @@ async def shortern_link(
 		full_traceback = traceback.format_exc()
 
 		# Print the exception details and the full traceback
-		print(f"An exception of type {type(e).__name__} occurred.")
-		print(f"Details: {e}")
-		print("Full Traceback:")
-		print(full_traceback)
+		logger.debug(f"An exception of type {type(e).__name__} occurred.")
+		logger.debug(f"Details: {e}")
+		logger.debug("Full Traceback:")
+		logger.debug(full_traceback)
 
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -61,7 +64,7 @@ async def shortern_link(
 		)
 
 	# Register to db:
-	print(f"CURRENT USER: {current_user}")
+	logger.debug(f"CURRENT USER: {current_user}")
 	url_info = URLShorteningDBStore(
 		creator_id=current_user["uid"],
 		old_link=shortening_request.original_url,

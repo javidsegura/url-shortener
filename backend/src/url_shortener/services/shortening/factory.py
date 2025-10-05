@@ -19,6 +19,10 @@ from hashlib import sha256
 from url_shortener.core.clients.redis import initialize_redis_client
 from .concrete_implementations import Shortener, RandomString, EncryptedString, CounterEncodedString
 from url_shortener.core.settings import initialize_settings
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class BaseCreator(ABC):
 	def __init__(self) -> None:
@@ -37,7 +41,7 @@ class BaseCreator(ABC):
 			value=original_url, 
 			ex=minutes_until_expiration * 60
 		)
-		print( # FIX => Add logger 
+		logger.debug( 
 			f"SUCCESFULLY SET URL: {await redis.get(shortened_url)} with \
                 ttl: {await redis.ttl(shortened_url)}"
 		)

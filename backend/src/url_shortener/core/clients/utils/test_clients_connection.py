@@ -7,8 +7,6 @@ from url_shortener.core.clients.redis import initialize_redis_client
 from url_shortener.dependencies import get_db
 from url_shortener.database import User
 
-# FIX: these tests need to be redesigned 
-
 # Redis
 async def test_redis_connection() -> bool:
 	redis_client_connector = initialize_redis_client()

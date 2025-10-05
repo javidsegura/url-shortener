@@ -4,12 +4,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
  
 from url_shortener.core.clients.firebase import initialize_firebase
+from url_shortener.core.logger.logger import initialize_logger
 from url_shortener.routers import (
 	health_router,
 	link_router,
 	redirect_router,
 	user_router,
 )
+import logging 
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,12 +22,13 @@ async def lifespan(app: FastAPI):
     available for the entire application lifecycle.
     """
     initialize_firebase()
+    initialize_logger() 
 
     yield
 
     # --- Shutdown ---
     # You can add any cleanup code here, like closing database connections.
-    print("INFO:     Application shutdown complete.")
+    logger.debug("INFO:     Application shutdown complete.")
 
 app = FastAPI(title="URL shortener", lifespan=lifespan)
 
