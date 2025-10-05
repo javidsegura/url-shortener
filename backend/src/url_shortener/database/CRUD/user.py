@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from url_shortener.database import User
 from url_shortener.schemas.endpoints import CreateUserRequest
@@ -28,9 +28,17 @@ async def read_user(db: AsyncSession, user_id: str) -> User:
 	return result.scalar_one_or_none()
 
 async def delete_user(db: AsyncSession, user_id: str) -> bool:
-	user = read_user(db, user_id)
+	user = await read_user(db, user_id)
 	if user is None:
 		return False
 	await db.delete(user)
+	await db.commit()
+	return True
+
+async def edit_user_name(db: AsyncSession, user_id: str, new_name: str) -> bool:
+	new_name_statment = update(User)\
+						  .where(User.user_id == user_id)\
+						  .values(displayable_name=new_name)
+	await db.execute(new_name_statment)
 	await db.commit()
 	return True

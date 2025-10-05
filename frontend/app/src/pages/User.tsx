@@ -70,7 +70,7 @@ function UserProfile() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ displayable_name: draftName }),
+        body: JSON.stringify({ new_name: draftName }),
       });
       if (!res.ok) {
         throw new Error(`Failed to save (${res.status})`);

@@ -10,6 +10,9 @@ class CreateUserRequest(BaseModel):
 	profile_pic_object_name: str
 	country: str
 
+class ModifyUserNameRequest(BaseModel):
+	new_name: str
+
 
 class UploadProfilePicRequest(BaseModel):
 	file_name: str

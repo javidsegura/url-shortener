@@ -7,8 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from url_shortener.dependencies import verify_user, get_db
 from url_shortener.core.settings import initialize_settings
 from url_shortener.core.clients import redis_client, s3_client
-from url_shortener.database.CRUD.user import create_user, read_user, delete_user
+from url_shortener.database.CRUD.user import create_user, edit_user_name, read_user, delete_user
 from url_shortener.database import Link, User, get_list_of_links
+from url_shortener.schemas.endpoints.user import ModifyUserNameRequest
 from url_shortener.services.infra.s3 import PresignedUrl
 
 from url_shortener.schemas.endpoints import CreateUserRequest, UploadProfilePicRequest, ListOfLinksResponse, GetUserDataResponse
@@ -48,6 +49,22 @@ async def get_user_endpoint(
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
 			detail=f"{str(e)} -- couldn't get aws presigned url\n{traceback.format_exc()}"
+		)
+
+@router.patch(path="/{user_id}", status_code=status.HTTP_200_OK)
+async def patch_user_endpoint(
+	user_id: str,
+	change_name_request: ModifyUserNameRequest,
+	db: Annotated[AsyncSession, Depends(get_db)],
+	current_user: Annotated[dict, Depends(verify_user_private_dependency)],
+) -> str:
+	user_edited = await edit_user_name(db=db, user_id=user_id, new_name=change_name_request.new_name)
+	if user_edited:
+		return f"User with id: {user_id} edited successfully."
+	else:
+		raise HTTPException(
+			status_code=status.HTTP_404_NOT_FOUND,
+			detail=f"User with id: {user_id} not found."
 		)
 
 @router.delete(path="/{user_id}", status_code=status.HTTP_200_OK)
