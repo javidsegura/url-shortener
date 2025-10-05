@@ -8,7 +8,7 @@ WORKDIR /app
 
 COPY ./pyproject.toml ./
 COPY ./src ./src
-RUN pip3 install --no-cache-dir .
+RUN pip3 install --no-cache-dir -e .
 
 
 COPY ./alembic.ini ./

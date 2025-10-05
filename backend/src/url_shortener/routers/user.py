@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from url_shortener.dependencies import verify_user, get_db
 from url_shortener.core.settings import initialize_settings
 from url_shortener.core.clients import redis_client, s3_client
-from url_shortener.database.CRUD.user import create_user, read_user
+from url_shortener.database.CRUD.user import create_user, read_user, delete_user
 from url_shortener.database import Link, User, get_list_of_links
 from url_shortener.services.infra.s3 import PresignedUrl
 
@@ -19,7 +19,7 @@ verify_user_private_dependency = verify_user(user_private_route=True)
 app_settings = initialize_settings()
 
 
-@router.post(path="", status_code=status.HTTP_201_CREATED) # FIX: when is this used?
+@router.post(path="", status_code=status.HTTP_201_CREATED) # This should be a / depednent endpoint 
 async def create_user_endpoint(
 	user_data: CreateUserRequest, db: Annotated[AsyncSession, Depends(get_db)]
 ) -> str:
@@ -48,6 +48,21 @@ async def get_user_endpoint(
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
 			detail=f"{str(e)} -- couldn't get aws presigned url\n{traceback.format_exc()}"
+		)
+
+@router.delete(path="/{user_id}", status_code=status.HTTP_200_OK)
+async def delete_user_endpoint(
+	user_id: str,
+	db: Annotated[AsyncSession, Depends(get_db)],
+	current_user: Annotated[dict, Depends(verify_user_private_dependency)],
+) -> str:
+	user_deleted = await delete_user(db=db, user_id=user_id)
+	if user_deleted:
+		return f"User with id: {user_id} deleted successfully."
+	else:
+		raise HTTPException(
+			status_code=status.HTTP_404_NOT_FOUND,
+			detail=f"User with id: {user_id} not found."
 		)
 
 

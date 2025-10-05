@@ -26,3 +26,11 @@ async def create_user(db: AsyncSession, user_data: CreateUserRequest) -> User:
 async def read_user(db: AsyncSession, user_id: str) -> User:
 	result = await db.execute(select(User).where(User.user_id == user_id))
 	return result.scalar_one_or_none()
+
+async def delete_user(db: AsyncSession, user_id: str) -> bool:
+	user = read_user(db, user_id)
+	if user is None:
+		return False
+	await db.delete(user)
+	await db.commit()
+	return True

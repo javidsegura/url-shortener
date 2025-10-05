@@ -88,6 +88,42 @@ function UserProfile() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    const confirmed = window.confirm(
+      "Are you sure you want to delete your account? This action cannot be undone and will delete all your shortened links."
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      const token = await user.getIdToken();
+      const user_id = user.uid;
+      
+      // Call backend to delete user data
+      const res = await fetch(new URL(`user/${user_id}`, config.BASE_API_URL).href, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Failed to delete account (${res.status})`);
+      }
+      
+      // Delete Firebase auth account
+      await user.delete();
+      alert("Account deleted successfully");
+    } catch (error: any) {
+      if (error.code === 'auth/requires-recent-login') {
+        alert("For security reasons, please sign out and sign in again before deleting your account.");
+      } else {
+        console.error("Error deleting account:", error);
+        alert("Failed to delete account. Please try again.");
+      }
+    }
+  };
+
   if (isLoading || !userData) {
     return (
       <div className="p-6 bg-white rounded-lg shadow flex items-center gap-4 w-full max-w-sm">
@@ -106,56 +142,65 @@ function UserProfile() {
 
   return (
     <div className="p-6 bg-white rounded-lg shadow w-full max-w-sm">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col items-center gap-4">
         <Avatar className="w-20 h-20">
           <AvatarImage src={presigned_url_profile_pic} alt={displayable_name || "avatar"} />
         </Avatar>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
+        <div className="w-full text-center">
+          <div className="flex flex-col items-center gap-2">
             {isEditing ? (
-              <>
+              <div className="flex flex-col gap-2 w-full">
                 <input
-                  className="border rounded px-2 py-1 text-lg w-56"
+                  className="border rounded px-3 py-2 text-lg w-full"
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
                   disabled={isSaving}
+                  placeholder="Display name"
                 />
-                <button
-                  className="px-3 py-1 rounded bg-green-600 text-white text-sm hover:bg-green-700"
-                  onClick={saveName}
-                  disabled={isSaving}
-                >
-                  {isSaving ? "Saving..." : "Save"}
-                </button>
-                <button
-                  className="px-3 py-1 rounded border text-sm hover:bg-gray-50"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setDraftName(displayable_name || "");
-                  }}
-                  disabled={isSaving}
-                >
-                  Cancel
-                </button>
-              </>
+                <div className="flex gap-2 justify-center">
+                  <button
+                    className="px-4 py-2 rounded bg-green-600 text-white text-sm hover:bg-green-700"
+                    onClick={saveName}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded border text-sm hover:bg-gray-50"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setDraftName(displayable_name || "");
+                    }}
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             ) : (
               <>
-                <h3 className="text-xl font-semibold text-gray-900 cursor-pointer hover:underline" onClick={() => setIsEditing(true)}>
+                <h3 className="text-xl font-semibold text-gray-900">
                   {displayable_name || "No display name"}
                 </h3>
                 <button
-                  className="ml-2 text-sm px-2 py-1 border rounded text-gray-600 hover:bg-gray-50"
+                  className="text-sm px-3 py-1 border rounded text-gray-600 hover:bg-gray-50"
                   onClick={() => setIsEditing(true)}
                 >
-                  Edit
+                  Edit Name
                 </button>
               </>
             )}
           </div>
-          <div className="mt-2 text-sm text-gray-600">
+          <div className="mt-4 text-sm text-gray-600">
             <div>{email}</div>
             <div className="mt-1">{country}</div>
           </div>
+          <button
+            className="mt-4 px-4 py-2 rounded bg-red-600 text-white text-sm hover:bg-red-700"
+            onClick={handleDeleteAccount}
+          >
+            Delete Account
+          </button>
         </div>
       </div>
     </div>
@@ -210,7 +255,9 @@ function LinksTable() {
   }
 
   const formatStatus = (expires_at: string) => {
+    // Parse as UTC and add 2 hours for GMT+2
     const expiresAt = new Date(expires_at);
+    expiresAt.setHours(expiresAt.getHours() + 2);
     const now = new Date();
     const isExpired = expiresAt < now;
     const isExpiringSoon = !isExpired && expiresAt.getTime() - now.getTime() < 24 * 60 * 60 * 1000;
@@ -268,10 +315,10 @@ function LinksTable() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{link.click_count}</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(link.timeRegistered).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(link.timeRegistered).toLocaleString()}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.className}`}>{status.text}</span>
-                      <div className="text-xs text-gray-500 mt-1">{new Date(link.expires_at).toLocaleDateString()}</div>
+                      <div className="text-xs text-gray-500 mt-1">{new Date(link.expires_at).toLocaleString()}</div>
                     </td>
                   </tr>
                 );

@@ -109,7 +109,7 @@ export default function URLLink() {
         },
         body: JSON.stringify({
           original_url: originalUrl,
-          expires_in: Number(expiresIn),
+          expires_in_min: Number(expiresIn),
         }),
       });
 

@@ -1,6 +1,6 @@
 from datetime import datetime  
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import Optional, Type
 
 
 class CreateUserRequest(BaseModel):
@@ -19,7 +19,7 @@ class GetUserDataResponse(BaseModel):
 	user_id: str
 	displayable_name : str
 	email : str
-	timeRegistered : str
+	timeRegistered : datetime
 	profile_pic_object_name : str
 	country : str
 	isAdmin : int
