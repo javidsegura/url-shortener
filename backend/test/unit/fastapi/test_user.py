@@ -137,7 +137,7 @@ class TestGetUserEndpoint:
             response = fastapi_client.get("/api/user/1")
 
             assert response.status_code == 500
-            assert "couldnt get aws presigned url" in response.json()["detail"]
+            assert "S3 connection failed" in response.json()["detail"]
 
     def test_get_user_unauthorized(self, mock_db_override: AsyncMock, fastapi_client: TestClient):
         """Test accessing user data without proper authentication"""

@@ -13,8 +13,7 @@ class PresignedUrl():
                                         key: str,
                                         expiration_time_secs:int = 3600,
                                         **kwargs):
-            try:
-                  presigned_url = s3_client.generate_presigned_url(
+            presigned_url = s3_client.generate_presigned_url(
                   ClientMethod=action_type.value,
                   Params={
                         "Bucket": s3_bucket_name,
@@ -23,9 +22,7 @@ class PresignedUrl():
                   },
                   ExpiresIn=expiration_time_secs
             )
-                  return presigned_url
-            except Exception:
-                  print(f"EXcpetion occured: {Exception}")
+            return presigned_url
       def get_presigned_url(self, s3_bucket_name: str, key: str, expiration_time_secs:int = 3600, **kwargs) -> str:
             return self._generate_url(
                   action_type=PresignedUrlActionsType.GET,

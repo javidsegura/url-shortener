@@ -31,14 +31,6 @@ async def redirect_endpoint(
 		# 2) Redirect
 		return RedirectResponse(url=og_url, status_code=308)
 	except Exception as e:
-		full_traceback = traceback.format_exc()
-
-		# Print the exception details and the full traceback
-		print(f"An exception of type {type(e).__name__} occurred.")
-		print(f"Details: {e}")
-		print("Full Traceback:")
-		print(full_traceback)
-
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
 			detail=f"An exception occurred: {e}"
