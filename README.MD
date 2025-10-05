@@ -18,7 +18,7 @@ This URL shortener provides a scalable solution for creating and managing shorte
 
 
 ## Step-by-Step Installation
-### 0. Clone this repo
+### 0. Clone this repo (you may need to fork it otherwise)
 ```bash
 git clone https://github.com/javidsegura/url-shortener.git
 ```
@@ -96,7 +96,8 @@ You'll need to create and populate `.env` files for both the backend and fronten
 
 ### Backend
 
-1. Navigate to the directory `backend/env/env_config/base`.
+1. Navigate to the directory `backend/env_config/base`.
+1.5. You will need to create `env_config` and `/base` and `/synced` inside it 
 
 2. Create a new file named `.env.dev`.
 
@@ -119,9 +120,13 @@ You'll need to create and populate `.env` files for both the backend and fronten
       AWS_SECRET_ACCESS_KEY=""
       AWS_MAIN_REGION=""
       ```
+4. Navigate to `src/url_shortener/core/clients/`
+5. Create file titled `secret.url-shortener-abadb-firebase-adminsdk-fbsvc-48d38c91f0.json` and fill in with your firebase credentials
+
 ### Frontend
 
-1. Go to the frontend directory: `frontend/app/env_config/base`.
+1. Go to the frontend directory: `frontend/app/env_config/base`. \
+1.5. You will need to create `env_config` and `/base` and `/synced` inside it 
 
 2. Create a new file named `.env.dev`.
 
@@ -133,6 +138,7 @@ You'll need to create and populate `.env` files for both the backend and fronten
 ```bash
 environment="dev" 
 main_region="" # E.g., us-east-1
+
 ```
 
 ### 3. Start app locally 

@@ -297,7 +297,7 @@ function LinksTable() {
                         </button>
                         <a
                           className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
-                          href={`${window.location.origin}/${link.new_link}`}
+                          href={`${window.location.origin}/short/${link.new_link}`}
                           target="_blank"
                           rel="noreferrer"
                         >
