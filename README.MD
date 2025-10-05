@@ -98,19 +98,19 @@ You'll need to create and populate `.env` files for both the backend and fronten
 
 3. Add the following variables to the file. You must set these to actual values before running the application, but for now, they are set to **empty strings** as placeholders.
       ```
-      REDIS
-      REDIS_URL=""
+      #REDIS
+      REDIS_URL="" #Usually "redis://redis:6379"
 
-      DB
+      #DB
       MYSQL_USER=""
       MYSQL_PASSWORD=""
       MYSQL_HOST=""
       MYSQL_PORT=""
       MYSQL_DATABASE=""
-      MYSQL_SYNC_DRIVER=""
-      MYSQL_ASYNC_DRIVER=""
+      MYSQL_SYNC_DRIVER="" # Usually "mysqlql+pymsql"
+      MYSQL_ASYNC_DRIVER="" # Usually "mysql+aiomysql"
 
-      AWS
+      #AWS
       AWS_ACCESS_KEY_ID=""
       AWS_SECRET_ACCESS_KEY=""
       AWS_MAIN_REGION=""
@@ -122,6 +122,14 @@ You'll need to create and populate `.env` files for both the backend and fronten
 2. Create a new file named `.env.dev`.
 
 3. **Note:** The file must exist at this path, but for the initial setup, you **do not need to fill in any environmental variables** inside it.
+
+### Infra
+1. Go to infra file: `infra/terraform/environment/dev/terraform.tfvars`
+2. Fill in the following variables:
+```bash
+environment="dev" 
+main_region="" # E.g., us-east-1
+```
 
 ### 3. Start app locally 
 ```bash
