@@ -21,7 +21,7 @@ class User(Base):
     timeRegistered: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     isAdmin: Mapped[Optional[int]] = mapped_column(TINYINT(1), server_default=text("'0'"))
 
-    link: Mapped[list['Link']] = relationship('Link', back_populates='creator')
+    link: Mapped[list['Link']] = relationship('Link', back_populates='creator', cascade="all, delete-orphan")
 
 
 class Link(Base):

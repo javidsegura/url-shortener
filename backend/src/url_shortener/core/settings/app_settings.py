@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 
-i
 
 class Settings:
 	"""Application settings loaded from environment variables."""
