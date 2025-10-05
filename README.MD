@@ -18,6 +18,10 @@ This URL shortener provides a scalable solution for creating and managing shorte
 
 
 ## Step-by-Step Installation
+### 0. Clone this repo
+```bash
+git clone https://github.com/javidsegura/url-shortener.git
+```
 
 ### 1. Environment Variable Setup
 Before installing, set the **ENVIRONMENT** variable:
