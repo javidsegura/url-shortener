@@ -1,7 +1,6 @@
 ![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)
 ![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen.svg)
-![Build](https://img.shields.io/github/actions/workflow/status/javidsegura/url-shortener/ci.yml?branch=main&label=build)
-![License](https://img.shields.io/github/license/javidsegura/url-shortener)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)
 ![React](https://img.shields.io/badge/frontend-react%4019.1.1-blue)
 ![AWS](https://img.shields.io/badge/deploy-aws-orange)
