@@ -12,7 +12,7 @@ RESET = \033[0m
 # Variables
 VENV = ../.venv
 VENV_ACTIVATE = source $(VENV)/bin/activate
-APP_PATH = src.main:app
+APP_PATH = src.url_shortener.main:app
 PORT = 8000
 
 

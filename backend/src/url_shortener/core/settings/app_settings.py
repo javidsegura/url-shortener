@@ -1,10 +1,13 @@
 import os
+from pathlib import Path
 
 class Settings:
 	"""Application settings loaded from environment variables."""
 	
 	def __init__(self):
 		self.ENVIRONMENT = os.getenv("ENVIRONMENT").lower()
+
+
 		print(f"ENVIRONMENT IS: {self.ENVIRONMENT}")
 		self._extract_all_variables()
 	

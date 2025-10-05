@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-ENV APP_PATH="src.main:app"
+ENV APP_PATH="src.url_shortener.main:app"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 

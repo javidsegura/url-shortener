@@ -2,7 +2,7 @@
 name = "url_shortener"
 version = "0.1.0"
 requires-python = ">=3.8"
-dependencies = [
+dependencies = [ 
       "fastapi",
       "uvicorn",
       "gunicorn",
@@ -16,7 +16,9 @@ dependencies = [
       "pymysql",
       "firebase-admin",
       "boto3",
-      "alembic"
+      "alembic",
+      "boto3-stubs",
+      "boto3-stubs[s3,secretsmanager]"
 ]
 
 [project.optional-dependencies]
@@ -30,8 +32,7 @@ dev = [
       "PyYAML",
       "cryptography",
       "paramiko",
-      "boto3-stubs",
-      "boto3-stubs[s3,secretsmanager]",
+
 ]
 tests = [
       "pytest",

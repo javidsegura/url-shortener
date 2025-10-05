@@ -5,18 +5,18 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from database.generated_models import Base
+from url_shortener.database.generated_models import Base
+from url_shortener.core.settings import initialize_settings
 
 import os
-from core import settings
 
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-
-DATABASE_URL = f"{settings.MYSQL_SYNC_DRIVER}://{settings.MYSQL_USER}:{settings.MYSQL_PASSWORD}@{settings.MYSQL_HOST}:{settings.MYSQL_PORT}/{settings.MYSQL_DATABASE}"
+app_settings = initialize_settings()
+DATABASE_URL = f"{app_settings.MYSQL_SYNC_DRIVER}://{app_settings.MYSQL_USER}:{app_settings.MYSQL_PASSWORD}@{app_settings.MYSQL_HOST}:{app_settings.MYSQL_PORT}/{app_settings.MYSQL_DATABASE}"
 
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 

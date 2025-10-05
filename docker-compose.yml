@@ -6,6 +6,11 @@ services:
       - "6379:6379"
     volumes: 
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
   db-migration:
     image: javidsegura/url_shortener_backend
     command: ["python", "scripts/migrate.py"]
@@ -23,12 +28,6 @@ services:
       - ${BACKEND_ENV_FILE}
     environment:
       ENVIRONMENT: ${ENVIRONMENT}
-    # healthcheck: => ACTIVATE IN PRODUCTION
-    #   test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
-    #   interval: 30s
-    #   timeout: 5s
-    #   retries: 1
-    #   start_period: 5s
     depends_on:
       - db-migration
     
