@@ -32,9 +32,9 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(GREEN)%-15s$(RESET) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 
-start-remote-state:
+start-remote-state: ## Starts remote state for terraform (S3)
 	cd $(TERRAFORM_SET_UP_PATH) && terraform init && terraform apply 
-destroy-remote-state:
+destroy-remote-state: ## Stops remote state for terraform (S3)
 	cd $(TERRAFORM_SET_UP_PATH) && terraform destroy
 
 install: ## Initialize Terraform

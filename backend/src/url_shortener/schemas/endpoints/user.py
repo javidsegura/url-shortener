@@ -3,7 +3,7 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional, Type
 
 
-class CreateUserRequest(BaseModel):
+class CreateUserRequest(BaseModel): # This seems redudant
 	user_id: str
 	displayable_name: str
 	email: str

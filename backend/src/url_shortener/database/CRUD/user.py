@@ -41,4 +41,8 @@ async def edit_user_name(db: AsyncSession, user_id: str, new_name: str) -> bool:
 						  .values(displayable_name=new_name)
 	await db.execute(new_name_statment)
 	await db.commit()
-	return True
+	select_stmt = select(User).where(User.user_id == user_id)
+	result = await db.execute(select_stmt)
+	user = result.scalar_one_or_none()
+	
+	return user

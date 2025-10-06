@@ -43,7 +43,9 @@ tests = [
       "httpx",
       "faker",
       "factory-boy",
-      "moto[s3,secretsmanager]"
+      "moto[s3,secretsmanager]",
+      "testcontainers",
+      "mysqlclient",
 ]
 
 [build-system]
@@ -89,4 +91,3 @@ select = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
