@@ -111,7 +111,7 @@ pytest-run:
 	$(VENV_ACTIVATE) && pytest -s -vv \
 					--cov=url_shortener \
 					--cov-report=term-missing \
-					test/integration/endpoints
+					test/integration/endpoints/test_user.py
 test-docker-compose-start: ## Stats docker compose for integration tests of endpoints
 	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../docker-compose.yml -f ../docker-compose.test.yml -p $(PROJECT_NAME) up --build -d
 

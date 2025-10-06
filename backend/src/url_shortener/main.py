@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
  
 from url_shortener.core.clients.firebase import initialize_firebase
 from url_shortener.core.logger.logger import initialize_logger
+import url_shortener.core.clients as clients
 import url_shortener.core.settings as settings
 from url_shortener.routers import (
 	health_router,
@@ -26,6 +27,9 @@ async def lifespan(app: FastAPI):
     initialize_firebase()
     initialize_logger() 
     settings.app_settings = settings.initialize_settings()
+    clients.s3_client = clients.initialize_aws_s3_client()
+    clients.secrets_manager_client = clients.initialize_aws_secrets_manager_client()
+    clients.redis = clients.initialize_redis_client()
 
     yield
 

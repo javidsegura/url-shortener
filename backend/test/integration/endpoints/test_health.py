@@ -2,6 +2,8 @@ from fastapi.testclient import TestClient
 
 import logging
 
+import requests
+
 logger = logging.getLogger(__name__)
 
 class TestHealthEndpoint():
