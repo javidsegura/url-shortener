@@ -1,1 +1,1 @@
-from .app_settings import app_settings, initialize_settings
+from .app_settings import app_settings, initialize_settings, Settings

@@ -1,7 +1,11 @@
 import firebase_admin
 from firebase_admin import credentials
+import logging 
+
+logger =	logging.getLogger(__name__)
 
 def initialize_firebase():
+	logger.debug("Firebase initialized")
 	cred = credentials.Certificate(
 		"./src/url_shortener/core/clients/secret.url-shortener-abadb-firebase-adminsdk-fbsvc-48d38c91f0.json"
 	)

@@ -4,8 +4,8 @@ from typing import Annotated, Dict, List
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from url_shortener.dependencies import verify_user, get_db
-from url_shortener.core.settings import initialize_settings
+from url_shortener.core.settings.app_settings import Settings
+from url_shortener.dependencies import verify_user, get_db, get_app_settings
 from url_shortener.core.clients import redis_client, s3_client
 from url_shortener.database.CRUD.user import create_user, edit_user_name, read_user, delete_user
 from url_shortener.database import Link, User, get_list_of_links
@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 # GLOBAL VARIABLES
 router = APIRouter(prefix="/user")
 verify_user_private_dependency = verify_user(user_private_route=True)
-app_settings = initialize_settings()
 
 
 @router.post(path="", status_code=status.HTTP_201_CREATED) # This should be a / depednent endpoint 
@@ -36,6 +35,7 @@ async def create_user_endpoint(
 async def get_user_endpoint(
 	user_id: str,
 	db: Annotated[AsyncSession, Depends(get_db)],
+	app_settings: Annotated[Settings, Depends(get_app_settings)],
 	current_user: Annotated[dict, Depends(verify_user_private_dependency)],
 ) -> GetUserDataResponse:
 	user = await read_user(db, user_id)
@@ -100,6 +100,7 @@ async def get_user_links_endpoints(
 @router.post(path="/profile_pic")
 async def create_presigned_url_profile_pic_endpoint(
 	request: UploadProfilePicRequest,
+	app_settings: Annotated[Settings, Depends(get_app_settings)],
 ) -> Dict:
 	s3_file_name = f"/users/profile-pictures/{request.file_name}"
 	try:

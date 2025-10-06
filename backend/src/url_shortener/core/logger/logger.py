@@ -10,6 +10,9 @@ from contextlib import contextmanager
 from pythonjsonlogger import jsonlogger
 
 from .colorfulFormatter import ColoredJSONFormatter
+import logging 
+
+logger = logging.getLogger(__name__)
 
 
 class FileUploadFilter(logging.Filter):
@@ -144,5 +147,7 @@ def add_context_to_log(**kwargs):
 		LOG_CONTEXT.reset(token)
 
 def initialize_logger():
+	logger.debug("Firebase initialized")
+
 	logger_instance = Logger()
 	return logger_instance

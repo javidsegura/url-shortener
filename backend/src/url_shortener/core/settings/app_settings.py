@@ -1,15 +1,16 @@
 import os
 from pathlib import Path
 
+import logging
 
+logger = logging.getLogger(__name__)
 
 class Settings:
 	"""Application settings loaded from environment variables."""
 	
-	def __init__(self):
+	def __init__(self):		
 		self.ENVIRONMENT = os.getenv("ENVIRONMENT").lower()
-
-
+		logger.debug(f"ENVIRONMENT IS: {self.ENVIRONMENT}")
 		self._extract_all_variables()
 	
 	def _extract_all_variables(self):
@@ -32,7 +33,7 @@ class Settings:
 		self.MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
 		self.MYSQL_SYNC_DRIVER = os.getenv("MYSQL_SYNC_DRIVER")
 		self.MYSQL_ASYNC_DRIVER = os.getenv("MYSQL_ASYNC_DRIVER")
-		if self.ENVIRONMENT != "dev":
+		if self.ENVIRONMENT in ["staging", "production"]:
 			self.MYSQL_HOST = os.getenv("RDS_MYSQL_HOST") 
 
 			secret_key = os.getenv("SECRETS_MANAGER_DB_CREDENTIALS_KEY")
@@ -59,11 +60,19 @@ class Settings:
 	
 	def _validate_required_vars(self):
 		"""Validate that all required environment variables are set."""
-		required_vars = [
-			"REDIS_URL", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_HOST",
-			"MYSQL_PORT", "MYSQL_DATABASE", "MYSQL_SYNC_DRIVER", 
-			"MYSQL_ASYNC_DRIVER", "S3_MAIN_BUCKET_NAME"
-		]
+		logger.debug(f"ENVIRONEMNT IS: {self.ENVIRONMENT}")
+		if self.ENVIRONMENT == "test":
+			required_vars = [
+				"REDIS_URL", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_HOST",
+				"MYSQL_PORT", "MYSQL_DATABASE", "MYSQL_SYNC_DRIVER", 
+				"MYSQL_ASYNC_DRIVER",
+			]
+		else:
+			required_vars = [
+				"REDIS_URL", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_HOST",
+				"MYSQL_PORT", "MYSQL_DATABASE", "MYSQL_SYNC_DRIVER", 
+				"MYSQL_ASYNC_DRIVER", "S3_MAIN_BUCKET_NAME"
+			]
 		
 		missing_vars = []
 		for var in required_vars:
@@ -77,6 +86,8 @@ app_settings = None
 
 def initialize_settings():
 	global app_settings
+	logger.debug(f"Intiliazing settings")
 	if not app_settings:
+		logger.debug(f"Instantiating settings for the first time")
 		app_settings = Settings()
 	return app_settings

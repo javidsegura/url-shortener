@@ -19,17 +19,6 @@ services:
     restart: "no"
     environment:
       ENVIRONMENT: ${ENVIRONMENT}  
-  backend:
-    image: javidsegura/url_shortener_backend
-    ports:
-      - "8000:8000"
-    env_file:
-      - ${BACKEND_ENV_FILE}
-    environment:
-      ENVIRONMENT: ${ENVIRONMENT}
-    depends_on:
-      - db-migration
-    
   nginx:
     image: nginx:alpine
     ports:
@@ -43,4 +32,3 @@ services:
 
 volumes:
   redis-data:
-  db-data:
