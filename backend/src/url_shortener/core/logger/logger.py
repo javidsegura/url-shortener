@@ -83,7 +83,7 @@ class Logger:
 		self.colorful_output = colorful_output
 		self.queue_handler = self.__set_up_queue_handler()
 		self.root_logger = logging.getLogger()
-		self.root_logger.setLevel(logging.DEBUG)
+		self.root_logger.setLevel(logging.INFO)
 		self.root_logger.addHandler(self.queue_handler)
 
 		atexit.register(self.shutdown)

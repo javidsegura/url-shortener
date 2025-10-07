@@ -4,7 +4,6 @@ import logging
 
 import requests
 
-logger = logging.getLogger(__name__)
 
 class TestHealthEndpoint():
       def test_health_ping(self, fastapi_client: TestClient):
@@ -21,4 +20,4 @@ class TestHealthEndpoint():
             )
             assert response.status_code == 200
             data = response.json()
-            logger.debug(f"RESPONSES IS: {data}")
+            print(f"RESPONSES IS: {data}")

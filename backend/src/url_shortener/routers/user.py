@@ -39,14 +39,7 @@ async def get_user_endpoint(
 	app_settings: Annotated[Settings, Depends(get_app_settings)],
 	#current_user: Annotated[dict, Depends(verify_user_private_dependency)],
 ) -> GetUserDataResponse:
-	#user = await read_user(db, user_id)
-	user = User(
-                  user_id = "111",
-                  displayable_name = "testUser",
-                  email = "test@gmail.com",
-                  profile_pic_object_name="pics/myObj",
-                  country="US",
-            )
+	user = await read_user(db, user_id)
 
 	try:
 		presigned_url_creator = PresignedUrl()

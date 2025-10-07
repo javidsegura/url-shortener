@@ -11,6 +11,9 @@ class Settings:
 	def __init__(self):		
 		self.ENVIRONMENT = os.getenv("ENVIRONMENT").lower()
 		logger.debug(f"ENVIRONMENT IS: {self.ENVIRONMENT}")
+		if not self.ENVIRONMENT:
+			raise ValueError("Environment is not provided. \
+				Do export ENVIRONMENT=<value>")
 		self._extract_all_variables()
 	
 	def _extract_all_variables(self):

@@ -2,6 +2,7 @@ import os
 from moto import mock_aws
 from url_shortener.core.logger import initialize_logger
 import pytest 
+import pytest_asyncio
 from url_shortener.core.clients import initialize_aws_s3_client, initialize_aws_secrets_manager_client
 import json
 
@@ -33,3 +34,5 @@ def secretsmanager_setup():
             SecretString=json.dumps(secret_value)
       )
       yield secret_name, secret_value
+
+
