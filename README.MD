@@ -8,6 +8,10 @@
 # URL Shortener  
   
 A production-ready URL shortening service built with FastAPI, React, and deployed on AWS infrastructure.  
+
+Deployment architecture:
+![Deployment Architecture](media/Deployment%20Architecture.drawio.png)
+
   
 ## Overview  
   

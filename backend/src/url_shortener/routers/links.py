@@ -5,9 +5,9 @@ from typing import Annotated, Dict
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from url_shortener.core.clients import redis_client
-from url_shortener.core.settings.app_settings import Settings, initialize_settings
+from url_shortener.core.settings.app_settings import Settings, app_settings
 from url_shortener.database import AsyncSession, create_link
-from url_shortener.dependencies import verify_user, get_db
+from url_shortener.dependencies import verify_user, get_db, get_app_settings
 
 from url_shortener.schemas.db_CRUD import URLShorteningDBStore
 from url_shortener.schemas.endpoints import DataURL, URLShorteningRequest, URLShorteningResponse
@@ -18,15 +18,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-
 router = APIRouter(prefix="/link")
 verify_user_dependency = verify_user()
-app_settings = initialize_settings()
 
 @router.post(path="", status_code=status.HTTP_200_OK)
 async def shortern_link(
 	current_user: Annotated[dict, Depends(verify_user_dependency)],
 	db: Annotated[AsyncSession, Depends(get_db)],
+	app_settings: Annotated[Settings, Depends(get_app_settings)],
 	shortening_request: URLShorteningRequest,
 ) -> (
 	Dict[str, str]

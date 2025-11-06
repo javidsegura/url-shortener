@@ -1,4 +1,4 @@
-.PHONY: help dev dev-debug install db-models lint lint-check pytest-run 
+.PHONY: help dev dev-debug install db-models lint lint-check pytest-run  test-docker-compose-start
 
 # Colors for output
 RED = \033[31m
@@ -14,6 +14,9 @@ VENV = ../.venv
 VENV_ACTIVATE = source $(VENV)/bin/activate
 APP_PATH = src.url_shortener.main:app
 PORT = 8000
+BACKEND_ENV_FILE_SYNCED_PATH= ./backend/env_config/synced/.env.$(ENVIRONMENT)
+PROJECT_NAME = url-shortener
+
 
 
 help: ## Show this help message
@@ -30,7 +33,8 @@ install: ## Install backend dependencies
 # 1) Boot-up 
 dev: ## Start backend development server
 	$(VENV_ACTIVATE) &&  ENVIRONMENT=dev uvicorn $(APP_PATH) --reload --host 0.0.0.0 --port $(PORT)
-	
+
+
 
 # 2) CI
 lint: ## Run linting and formatting (local dev)
@@ -107,4 +111,9 @@ pytest-run:
 	$(VENV_ACTIVATE) && pytest -s -vv \
 					--cov=url_shortener \
 					--cov-report=term-missing \
-					test/unit/
+					test/integration/endpoints/
+test-docker-compose-start: ## Stats docker compose for integration tests of endpoints
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../docker-compose.yml -f ../docker-compose.test.yml -p $(PROJECT_NAME) up --build 
+
+test-docker-compose-stop: ## Stops docker compose for integration tests of endpoints
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../docker-compose.yml -f ../docker-compose.test.yml -p $(PROJECT_NAME) down -v

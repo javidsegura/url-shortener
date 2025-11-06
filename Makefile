@@ -48,6 +48,7 @@ dev-stop: ## Stop development environment
 	pkill -f "vite" || true
 	pkill -f "npm run dev" || true
 	$(MAKE) delete_ci_artifacts
+	
 dev-restart-docker-compose: ## Restart docker compose for dev
 	@echo "Restarting docker compose"
 	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH)  docker compose -f docker-compose.yml -f docker-compose.dev.yml -p $(PROJECT_NAME) down -v
