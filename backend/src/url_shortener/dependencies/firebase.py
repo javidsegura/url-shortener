@@ -46,5 +46,4 @@ def verify_user(
 	return get_token_dependency
 
 def is_user_admin(token : Annotated[str, Depends(oauth2scheme)]):
-	decoded_token = auth.verify_id_token(token)
-	uid = decoded_token["uid"]
+	...
