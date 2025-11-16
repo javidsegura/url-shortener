@@ -8,12 +8,13 @@ services:
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 1s
-      timeout: 3s
+      timeout: 3s 
       retries: 5
   db-migration:
     image: javidsegura/url_shortener_backend
     command: ["python", "scripts/migrate.py"]
     working_dir: /app
+    
     env_file:
       - ${BACKEND_ENV_FILE}
     restart: "no"

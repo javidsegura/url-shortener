@@ -28,7 +28,7 @@ resource "random_string" "random_postfix" {
 
 // Creating storage account
 resource "azurerm_storage_account" "sa" {
-  name                     = "${lower(replace(substr("${var.project_name}tfstate", 0, 16), "-", ""))}${random_string.random_postfix.result}"
+  name                     = "${lower(replace(substr("tfstate${var.project_name}", 0, 16), "-", ""))}${random_string.random_postfix.result}"
   resource_group_name      = data.azurerm_resource_group.rg.name
   location                 = data.azurerm_resource_group.rg.location
   account_tier             = "Standard"
