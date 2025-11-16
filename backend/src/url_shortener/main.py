@@ -47,7 +47,7 @@ app.add_middleware(
 	allow_credentials=True,
 )
 
-routers = [health_router, link_router, user_router]
+routers = [health_router, link_router, user_router, ]
 
 for router in routers:
 	app.include_router(router, prefix="/api")

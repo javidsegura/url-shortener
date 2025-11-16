@@ -134,7 +134,10 @@ export default function RegisterForm() {
       const fileUploadResponse = await fetch(presigned_url, {
         method: "PUT",
         body: formContent.profile_pic,
-        headers: { "Content-Type": formContent.profile_pic.type },
+        headers: { 
+          "Content-Type": formContent.profile_pic.type ,
+          "x-ms-blob-type": "BlockBlob",
+      },
       });
 
       if (!fileUploadResponse.ok) {

@@ -19,8 +19,8 @@ BASE_FRONTEND_ENV_FILE_PATH = ../frontend/app/env_config/base/.env.$(ENVIRONMENT
 ANSIBLE_INVENTORY_FILE_PATH = ./ansible/inventory/$(ENVIRONMENT).ini
 
 # GENERAL PATHS
-TERRAFORM_ENVIRONMENT_PATH=terraform/environment/$(ENVIRONMENT)
-TERRAFORM_SET_UP_PATH=terraform/set-up
+TERRAFORM_ENVIRONMENT_PATH=terraform/$(CLOUD_PROVIDER)/environment/$(ENVIRONMENT)
+TERRAFORM_SET_UP_PATH=terraform/$(CLOUD_PROVIDER)/set-up
 
 # SCRIPTS
 SYNC_SCRIPT_PATH = scripts.output_redirection.main
@@ -132,6 +132,10 @@ connection-db: ## SSH tunnel between local MySQL port and instance MySQL port
 
 check_enviroment_variables:
 	@if [ -z "$$ENVIRONMENT" ]; then \
+		echo "Error: ENVIRONMENT must be defined"; \
+		exit 1; \
+	fi
+	@if [ -z "$$CLOUD_PROVIDER" ]; then \
 		echo "Error: ENVIRONMENT must be defined"; \
 		exit 1; \
 	fi
