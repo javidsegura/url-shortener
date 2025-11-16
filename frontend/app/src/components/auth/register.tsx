@@ -106,7 +106,7 @@ export default function RegisterForm() {
 
     setIsSubmitting(true);
 
-    let s3_file_name = null;
+    let file_path = null;
 
     try {
       // (1) Get presigned URL & upload profile pic (mandatory)
@@ -129,7 +129,7 @@ export default function RegisterForm() {
 
       const data = await preSignedUrlResponse.json();
       const presigned_url = data.presigned_url;
-      s3_file_name = data.s3_file_name;
+      file_path = data.file_path;
 
       const fileUploadResponse = await fetch(presigned_url, {
         method: "PUT",
@@ -169,7 +169,7 @@ export default function RegisterForm() {
           displayable_name: formContent.name,
           email: formContent.email,
           country: formContent.country,
-          profile_pic_object_name: s3_file_name, // required & present
+          profile_pic_object_name: file_path, // required & present
         }),
       });
 
