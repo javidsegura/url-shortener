@@ -11,7 +11,8 @@ from url_shortener.core.clients import redis_client, s3_client
 from url_shortener.database.CRUD.user import create_user, edit_user_name, read_user, delete_user
 from url_shortener.database import Link, User, get_list_of_links
 from url_shortener.schemas.endpoints.user import ModifyUserNameRequest
-from url_shortener.services.infra.s3 import PresignedUrl
+from url_shortener.services.storage.storage import StorageService
+from url_shortener.dependencies.storage import get_storage_service_dependency
 
 from url_shortener.schemas.endpoints import CreateUserRequest, UploadProfilePicRequest, ListOfLinksResponse, GetUserDataResponse
 
@@ -36,29 +37,20 @@ async def create_user_endpoint(
 async def get_user_endpoint(
 	user_id: str,
 	db: Annotated[AsyncSession, Depends(get_db)],
-	app_settings: Annotated[Settings, Depends(get_app_settings)],
+	storage_service: Annotated[StorageService, Depends(get_storage_service_dependency)],
 	#current_user: Annotated[dict, Depends(verify_user_private_dependency)],
 ) -> GetUserDataResponse:
 	user = await read_user(db, user_id)
 
 	try:
-		presigned_url_creator = PresignedUrl()
-		presigned_url = presigned_url_creator.get_presigned_url(
-						s3_bucket_name=app_settings.S3_MAIN_BUCKET_NAME,
-						key=user.profile_pic_object_name
+		presigned_url = storage_service.get_presigned_url(
+			file_path=user.profile_pic_object_name
 		)
 		return GetUserDataResponse(**user.__dict__, presigned_url_profile_pic=presigned_url)
 	except ValueError as e:
 		raise HTTPException(
 			status_code=status.HTTP_404_NOT_FOUND,
 			detail=str(e)
-		)
-	except ClientError as e:
-		error_code = e.response['Error']['Code']
-		error_message = e.response['Error']['Message']
-		raise HTTPException(
-			status_code=status.HTTP_400_BAD_REQUEST,
-			detail=f"S3 error ({error_code}): {error_message}"
 		)
 	except Exception as e:
 		raise HTTPException(
@@ -112,19 +104,16 @@ async def get_user_links_endpoints(
 @router.post(path="/profile_pic")
 async def create_presigned_url_profile_pic_endpoint(
 	request: UploadProfilePicRequest,
-	app_settings: Annotated[Settings, Depends(get_app_settings)],
+	storage_service: Annotated[StorageService, Depends(get_storage_service_dependency)],
 ) -> Dict:
-	s3_file_name = f"/users/profile-pictures/{request.file_name}"
+	file_path = f"users/profile-pictures/{request.file_name}"
 	try:
-		presigned_url_creator = PresignedUrl()
-		presigned_url = presigned_url_creator.put_presigned_url(
-						s3_bucket_name=app_settings.S3_MAIN_BUCKET_NAME,
-						key=s3_file_name,
-						ContentType=request.content_type
-						
+		presigned_url = storage_service.put_presigned_url(
+			file_path=file_path,
+			content_type=request.content_type
 		)
-		logger.debug(f"Sucesfully created presigned url {presigned_url}")
-		return {"presigned_url": presigned_url, "s3_file_name": s3_file_name}
+		logger.debug(f"Successfully created presigned url {presigned_url}")
+		return {"presigned_url": presigned_url, "file_path": file_path}
 	except Exception as e:
 		logger.debug(f"Exception in: {e}")
 		raise HTTPException(

@@ -26,6 +26,7 @@ install: ## Install project-wide dependencies
 	$(MAKE) -C frontend install
 	$(MAKE) -C infra install
 	brew install jq
+
 install-packages: ## Install only packages
 	@echo "$(YELLOW)Installing all project dependencies...$(RESET)"
 	$(MAKE) check_enviroment_variables
@@ -33,10 +34,8 @@ install-packages: ## Install only packages
 	$(MAKE) -C frontend install
 
 
-dev-start: ## Hot reload enabled
+dev-start: ## Hot reload enabled for both backend and frontend
 	$(MAKE) check_enviroment_variables
-	$(MAKE) -C infra terraform-apply
-	$(MAKE) -C infra sync_envs
 	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f docker-compose.yml -f docker-compose.dev.yml -p $(PROJECT_NAME) up --build 
 	$(MAKE) container_logs SERVICE_NAME=backend
 
@@ -47,7 +46,6 @@ dev-stop: ## Stop development environment
 	pkill -f "uvicorn" || true
 	pkill -f "vite" || true
 	pkill -f "npm run dev" || true
-	$(MAKE) delete_ci_artifacts
 	
 dev-restart-docker-compose: ## Restart docker compose for dev
 	@echo "Restarting docker compose"
@@ -57,12 +55,15 @@ dev-restart-docker-compose: ## Restart docker compose for dev
 	pkill -f "npm run dev" || true
 	docker volume prune -f
 	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f docker-compose.yml -f docker-compose.dev.yml -p $(PROJECT_NAME) up --build 
+
+dev-start-infra: ## Deploy terraform infra for development environmnet
+	$(MAKE) -C infra terraform-apply
+	$(MAKE) -C infra sync_envs
+
 dev-destroy-infra: ## Destroy terraform infra for development environmnet
 	$(MAKE) check_enviroment_variables
 	@echo "$(YELLOW)Stopping development environment...$(RESET)"
 	$(MAKE) -C infra terraform-stop 
-
-
 
 deploy-start: ## ups infra for prod and stagin
 	$(MAKE) check_enviroment_variables

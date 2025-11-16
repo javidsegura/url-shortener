@@ -1,0 +1,4 @@
+- Troubleshoot set-up
+- Proper firebase tests (consider deleting)
+- Get telemetry with metrics 
+- Define CI and CD strategy 
