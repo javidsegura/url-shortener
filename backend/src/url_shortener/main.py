@@ -14,6 +14,9 @@ from url_shortener.routers import (
 	user_router,
 )
 import logging 
+from prometheus_fastapi_instrumentator import Instrumentator
+
+
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
@@ -27,7 +30,7 @@ async def lifespan(app: FastAPI):
     initialize_firebase()
     initialize_logger() 
     settings.app_settings = settings.initialize_settings()
-    clients.s3_client = clients.initialize_aws_s3_client()
+    clients.s3_client = clients.initialize_aws_s3_client() # Update this 
     clients.secrets_manager_client = clients.initialize_aws_secrets_manager_client()
     clients.redis = clients.initialize_redis_client()
 
@@ -52,3 +55,5 @@ routers = [health_router, link_router, user_router, ]
 for router in routers:
 	app.include_router(router, prefix="/api")
 app.include_router(redirect_router)
+
+Instrumentator().instrument(app).expose(app)

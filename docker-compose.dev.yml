@@ -11,12 +11,12 @@ services:
     volumes:
       - ./frontend/app:/app
       - /app/node_modules  # Anonymous volume for node_modules
-    # healthcheck:
-    #   test: ["CMD", "curl", "--fail", "http://localhost:5173"]
-    #   interval: 10s
-    #   timeout: 5s
-    #   retries: 3
-    #   start_period: 30s
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5173"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
   database:
     image: mysql:8.0
     volumes:
@@ -57,7 +57,7 @@ services:
         redis:
           condition: service_healthy
       healthcheck: 
-        test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+        test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/ping"]
         interval: 30s
         timeout: 5s
         retries: 5
@@ -78,6 +78,36 @@ services:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost/nginx-health"]
+  
+  # Telemetry section
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./telemetry/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+  
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./telemetry/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./telemetry/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      prometheus:
+        condition: service_started
+
       
 volumes:
   db-data:
+  prometheus_data:
+  grafana_data:
