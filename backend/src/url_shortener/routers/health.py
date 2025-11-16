@@ -37,3 +37,4 @@ async def cheeck_backend_health_endpoint(
 
 ) -> Dict:
 	return {"response": "pong"}
+
