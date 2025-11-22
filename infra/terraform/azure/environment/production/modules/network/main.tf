@@ -148,5 +148,10 @@ resource "azurerm_subnet_network_security_group_association" "public_nsg_assoc" 
   network_security_group_id = azurerm_network_security_group.web_app_nsg.id
 }
 
-# Note: Cannot associate NSG with delegated subnet (private_subnet)
-# Azure manages security for subnets delegated to services like MySQL
+# Associate NSG with private subnet (delegated for MySQL)
+# While Azure puts "Intent Policies" on the subnet, we must associate the NSG
+# if we want the AllowMySQL-From-WebApp rule to actually work
+resource "azurerm_subnet_network_security_group_association" "private_nsg_assoc" {
+  subnet_id                 = azurerm_subnet.private_subnet.id
+  network_security_group_id = azurerm_network_security_group.database_nsg.id
+}

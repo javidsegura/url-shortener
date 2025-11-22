@@ -25,11 +25,16 @@ output "key_vault_db_secret_name" {
   value       = module.mysql_db.db_credentials_secret_name
 }
 
+output "key_vault_name" {
+  description = "Name of the Key Vault containing DB credentials"
+  value       = module.mysql_db.key_vault_name
+}
+
 
 # ========================================
 # VIRTUAL MACHINE
 # ========================================
-output "vm_public_ip" {
+output "vm_app_server_public_ip" {
   description = "Public IP address of the web application VM"
   value       = module.vm.vm_public_ip
 }
@@ -39,12 +44,12 @@ output "vm_private_ip" {
   value       = module.vm.vm_private_ip
 }
 
-output "vm_ssh_user" {
+output "vm_app_server_ssh_user" {
   description = "SSH username for the VM"
   value       = "azureuser"
 }
 
-output "vm_ssh_private_key_path" {
+output "vm_server_ssh_private_key_file_path" {
   description = "Path to the SSH private key file"
   value       = abspath(pathexpand(var.ssh_key_local_path))
 }

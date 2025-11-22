@@ -43,6 +43,7 @@ module "mysql_db" {
   resource_group_name = var.resource_group_name
   db_username         = var.db_username
   delegated_subnet_id = module.network.delegated_subnet_id
+  vnet_id             = module.network.vnet_id
 
   depends_on = [module.network]
 }

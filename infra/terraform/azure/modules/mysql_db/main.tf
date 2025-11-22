@@ -23,6 +23,20 @@ locals {
   project_short = substr(replace(lower(var.project_name), "/[^a-z0-9]/", ""), 0, 6)
 }
 
+# Create the Private DNS Zone for MySQL
+resource "azurerm_private_dns_zone" "mysql_dns_zone" {
+  name                = "${var.project_name}.mysql.database.azure.com"
+  resource_group_name = var.resource_group_name
+}
+
+# Link the DNS Zone to the Main VNet
+resource "azurerm_private_dns_zone_virtual_network_link" "mysql_vnet_link" {
+  name                  = "mysql-vnet-link"
+  private_dns_zone_name = azurerm_private_dns_zone.mysql_dns_zone.name
+  virtual_network_id    = var.vnet_id
+  resource_group_name   = var.resource_group_name
+}
+
 resource "azurerm_key_vault" "vault" {
   name                = "kv${local.env_short}${local.project_short}${random_string.name.result}"
   location = var.location
@@ -57,7 +71,7 @@ resource "azurerm_key_vault_secret" "db_credentials" {
 }
 
 resource "azurerm_mysql_flexible_server" "database" {
-  name = "app-db-${random_string.name.result}"
+  name = "${var.project_name}-db-${random_string.name.result}"
   resource_group_name = var.resource_group_name
   location = var.location
   version = "8.0.21"
@@ -73,7 +87,12 @@ resource "azurerm_mysql_flexible_server" "database" {
 
   delegated_subnet_id = var.delegated_subnet_id
 
+  # Associate with Private DNS Zone for VNet resolution
+  private_dns_zone_id = azurerm_private_dns_zone.mysql_dns_zone.id
+
   backup_retention_days = 7
+  
+  depends_on = [azurerm_private_dns_zone_virtual_network_link.mysql_vnet_link]
   
   lifecycle {
     ignore_changes = [

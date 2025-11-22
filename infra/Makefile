@@ -109,10 +109,9 @@ sync_all: ## Syncs tf output in dotenvs (backend and frontend) and ansible
 	$(MAKE) sync_envs
 	$(MAKE) sync_ansible_inventory
 
-extract-db-credentials:
+extract-db-credentials: ## Extract credentials from db
 	python3 -m scripts.resource_connections.extract_db_credentials \
-	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
-	   --region-name $(AWS_SECRETS_MANAGER_REGION)
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH)
 
 connection-ssh-web-server: ## Send TCP traffic to port 22 in remote host 
 	python3 -m $(CONNECTION_SCRIPT_PATH) \

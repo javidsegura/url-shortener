@@ -18,3 +18,7 @@ variable "db_username" {
 variable "delegated_subnet_id" {
   type = string
 }
+variable "vnet_id" {
+  type        = string
+  description = "The ID of the Virtual Network to link the Private DNS Zone"
+}
