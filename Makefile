@@ -72,6 +72,11 @@ deploy-start: ## ups infra for prod and stagin
 	$(MAKE) -C frontend build
 	$(MAKE) -C backend push_docker
 	$(MAKE) -C infra ansible-start
+deploy-start-without-infra: ## up infra (faster), assumes infra is already up. 
+	$(MAKE) check_enviroment_variables
+	$(MAKE) -C frontend build
+	$(MAKE) -C backend push_docker
+	$(MAKE) -C infra ansible-start
 
 deploy-stop: ## Stop development environment
 	@echo "$(YELLOW)Stopping development environment...$(RESET)"
@@ -84,11 +89,6 @@ delete_ci_artifacts:
 	rm -rf $(FROTNEND_ENV_FILE_SYNCED_PATH)
 	docker volume prune -f
 
-
-container_names:
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f docker-compose.yml -f docker-compose.prod.yml -p $(PROJECT_NAME) ps
-container_logs:
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f docker-compose.yml -f docker-compose.prod.yml -p $(PROJECT_NAME) logs $(SERVICE_NAME) -f
 
 container_build:
 	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f docker-compose.yml -f docker-compose.prod.yml -p $(PROJECT_NAME) up --build $(SERVICE_NAME) 

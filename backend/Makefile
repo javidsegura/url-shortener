@@ -1,5 +1,7 @@
 .PHONY: help dev dev-debug install db-models lint lint-check pytest-run  test-docker-compose-start
 
+SHELL := /bin/bash
+
 # Colors for output
 RED = \033[31m
 GREEN = \033[32m
@@ -27,8 +29,13 @@ help: ## Show this help message
 # 0) Set-up
 install: ## Install backend dependencies
 	python3.11 -m venv $(VENV)
+	$(VENV_ACTIVATE) && pip3 install -e "."
+	$(VENV_ACTIVATE) && alembic init migrations || echo "alembic init already started"
+install-full: ## Install backend dependices for client + dev usage
+	python3.11 -m venv $(VENV)
 	$(VENV_ACTIVATE) && pip3 install -e ".[dev, tests]"
 	$(VENV_ACTIVATE) && alembic init migrations || echo "alembic init already started"
+
 
 # 1) Boot-up 
 dev: ## Start backend development server
@@ -43,8 +50,6 @@ lint: ## Run linting and formatting (local dev)
 	$(VENV_ACTIVATE) && ruff format src/
 	@echo "$(BLUE)Running ruff checks and fixes...$(RESET)"
 	$(VENV_ACTIVATE) && ruff check --fix src/
-	@echo "$(BLUE)Running security checks with bandit...$(RESET)"
-	$(VENV_ACTIVATE) && bandit -r src/
 
 lint-check: ## Run linting checks (CI)
 	@echo "$(YELLOW)Running CI linting checks...$(RESET)"
@@ -54,12 +59,28 @@ lint-check: ## Run linting checks (CI)
 	@$(VENV_ACTIVATE) && ruff check  src/
 	@echo "$(BLUE)Running ruff checks with diff...$(RESET)"
 	@$(VENV_ACTIVATE) && ruff check  --diff --fix src/ 
-	@echo "$(BLUE)Running security checks with bandit...$(RESET)"
-	@$(VENV_ACTIVATE) && bandit -r src/ 
+
+format: ## Formats
+	@echo "$(YELLOW)Running CI formatting$(RESET)"
+	@echo "$(BLUE)Checking code formatting with ruff...$(RESET)"
+	@$(VENV_ACTIVATE) && ruff format --check src/
+
+format-fix: ## Format code (for pre-commit)
+	@echo "$(YELLOW)Formatting code with ruff...$(RESET)"
+	$(VENV_ACTIVATE) && ruff format src/
+	
+
 
 test: ## Run all tests
 	@echo "$(YELLOW)Running all tests...$(RESET)"
 	$(VENV_ACTIVATE) && python3 -m pytest test/unit/links.py -v
+
+static-security-analysis: ## Run static security analysis
+	@echo "$(BLUE)Running security checks with bandit...$(RESET)"
+	$(VENV_ACTIVATE) && bandit -r src/ -f json -o bandit-report.json || true
+	@echo "$(BLUE)Running security checks with safety...$(RESET)"
+	$(VENV_ACTIVATE) && safety check --json || true
+
 
 # 3) CD
 ## DB

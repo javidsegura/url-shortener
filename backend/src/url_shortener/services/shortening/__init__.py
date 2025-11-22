@@ -1,1 +1,6 @@
-from .factory import BaseCreator, RandomStringCreator, EncryptedStringCreator, CounterEncodedStringCreator
+from .factory import (
+	BaseCreator,
+	CounterEncodedStringCreator,
+	EncryptedStringCreator,
+	RandomStringCreator,
+)

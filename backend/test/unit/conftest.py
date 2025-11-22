@@ -82,9 +82,11 @@ def mock_aws_secrets():
         "username": "prod_user",
         "password": "prod_password"
     }
-    with patch("url_shortener.services.infra.secretsmanager.SecretsManager.fetch_secret") as mock_fetch_secrets:
-        mock_fetch_secrets.return_value = return_value
-        yield mock_fetch_secrets
+    # Mock the secrets service factory to return a mock service
+    mock_secrets_service = MagicMock()
+    mock_secrets_service.fetch_secret.return_value = return_value
+    with patch("url_shortener.services.infra.secrets.get_secrets_service", return_value=mock_secrets_service) as mock_get_secrets:
+        yield mock_secrets_service
 
 
 @pytest.fixture(scope="session", autouse=True)

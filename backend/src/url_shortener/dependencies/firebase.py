@@ -1,9 +1,11 @@
 from typing import Annotated, Dict
+
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from firebase_admin import auth
 
 oauth2scheme = OAuth2PasswordBearer(tokenUrl="token")
+
 
 def verify_user(
 	email_needs_verification: bool = False, user_private_route: bool = False
@@ -45,5 +47,5 @@ def verify_user(
 
 	return get_token_dependency
 
-def is_user_admin(token : Annotated[str, Depends(oauth2scheme)]):
-	...
+
+def is_user_admin(token: Annotated[str, Depends(oauth2scheme)]): ...

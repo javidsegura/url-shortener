@@ -1,9 +1,11 @@
+import logging
+import os
+
 import firebase_admin
 from firebase_admin import credentials
-import logging 
-import os 
 
-logger =	logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+
 
 def initialize_firebase():
 	logger.debug("Initializing firebase...")
@@ -26,4 +28,3 @@ def initialize_firebase():
 			firebase_admin.get_app()
 		except ValueError:
 			firebase_admin.initialize_app(cred)
-	

@@ -4,7 +4,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from starlette.responses import RedirectResponse
 
-
 from url_shortener.core.clients.redis import initialize_redis_client
 from url_shortener.database import AsyncSession, increment_link_count
 from url_shortener.dependencies import get_db
@@ -33,5 +32,5 @@ async def redirect_endpoint(
 	except Exception as e:
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-			detail=f"An exception occurred: {e}"
+			detail=f"An exception occurred: {e}",
 		)

@@ -75,8 +75,30 @@ ansible-ping: ## Check ansible connection is up
 ansible-start: ## Runs ansible playbook
 	$(VENV_ACTIVATE) && ANSIBLE_CONFIG=./ansible/ansible.cfg ansible-playbook ./ansible/playbook/multi-container.yml -i ./ansible/inventory/$(ENVIRONMENT).ini -e "stage_environment=$(ENVIRONMENT)"
 
-terraform-check:
+terraform-plan:
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform plan
+
+terraform-validate: ## Validate Terraform configuration (no credentials needed)
+	$(MAKE) check_enviroment_variables
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform init -backend=false && terraform validate
+
+terraform-fmt-check: ## Check Terraform formatting (no credentials needed)
+	$(MAKE) check_enviroment_variables
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform fmt -check -recursive
+
+terraform-fmt: ## Format Terraform files (no credentials needed)
+	$(MAKE) check_enviroment_variables
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform fmt -recursive
+
+terraform-fmt-all: ## Format all Terraform files (for pre-commit, no credentials needed)
+	@echo "$(YELLOW)Formatting all Terraform files...$(RESET)"
+	@for dir in terraform/*/environment/* terraform/*/set-up terraform/*/modules/*; do \
+		if [ -d "$$dir" ] && [ -n "$$(find $$dir -name '*.tf' -type f)" ]; then \
+			echo "$(BLUE)Formatting $$dir...$(RESET)"; \
+			cd $$dir && terraform fmt -recursive && cd - > /dev/null; \
+		fi; \
+	done
+	@echo "$(GREEN)All Terraform files formatted$(RESET)"
 
 sync_backend_env: ## Inject tf outputs into backend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."
@@ -109,10 +131,9 @@ sync_all: ## Syncs tf output in dotenvs (backend and frontend) and ansible
 	$(MAKE) sync_envs
 	$(MAKE) sync_ansible_inventory
 
-extract-db-credentials:
+extract-db-credentials: ## Extract credentials from db
 	python3 -m scripts.resource_connections.extract_db_credentials \
-	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
-	   --region-name $(AWS_SECRETS_MANAGER_REGION)
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH)
 
 connection-ssh-web-server: ## Send TCP traffic to port 22 in remote host 
 	python3 -m $(CONNECTION_SCRIPT_PATH) \

@@ -37,6 +37,7 @@ dev = [
       "PyYAML",
       "cryptography",
       "paramiko",
+      "safety"
 
 ]
 tests = [

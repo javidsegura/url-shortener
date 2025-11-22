@@ -1,4 +1,4 @@
-.PHONY: help install dev build build-local
+.PHONY: help install dev build build-local format
 
 # Colors for output
 RED = \033[31m
@@ -35,3 +35,6 @@ build-local: ## Build and preview frontend locally
 	cd ./app; \
 	npm run build; \
 	npm run preview
+
+format: ## Format frontend code using Prettier
+	cd ./app && npm run format
