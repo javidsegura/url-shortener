@@ -75,8 +75,20 @@ ansible-ping: ## Check ansible connection is up
 ansible-start: ## Runs ansible playbook
 	$(VENV_ACTIVATE) && ANSIBLE_CONFIG=./ansible/ansible.cfg ansible-playbook ./ansible/playbook/multi-container.yml -i ./ansible/inventory/$(ENVIRONMENT).ini -e "stage_environment=$(ENVIRONMENT)"
 
-terraform-check:
+terraform-plan:
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform plan
+
+terraform-validate: ## Validate Terraform configuration (no credentials needed)
+	$(MAKE) check_enviroment_variables
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform init -backend=false && terraform validate
+
+terraform-fmt-check: ## Check Terraform formatting (no credentials needed)
+	$(MAKE) check_enviroment_variables
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform fmt -check -recursive
+
+terraform-fmt: ## Format Terraform files (no credentials needed)
+	$(MAKE) check_enviroment_variables
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform fmt -recursive
 
 sync_backend_env: ## Inject tf outputs into backend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."
