@@ -2,16 +2,16 @@
 
 # Create username secret 
 resource "random_password" "db_password" {
-  length = 16
-  special = true
+  length           = 16
+  special          = true
   override_special = "!#$&*()-_=+[]{}<>?"
 
 }
 
 resource "random_string" "name" {
-  length = 4
+  length  = 4
   special = false
-  upper = false
+  upper   = false
 
 }
 
@@ -39,23 +39,23 @@ resource "azurerm_private_dns_zone_virtual_network_link" "mysql_vnet_link" {
 
 resource "azurerm_key_vault" "vault" {
   name                = "kv${local.env_short}${local.project_short}${random_string.name.result}"
-  location = var.location
+  location            = var.location
   resource_group_name = var.resource_group_name
-  tenant_id = data.azurerm_client_config.current.tenant_id
+  tenant_id           = data.azurerm_client_config.current.tenant_id
 
   sku_name = "standard"
 
   soft_delete_retention_days = 90
-  purge_protection_enabled = true
+  purge_protection_enabled   = true
 
   enable_rbac_authorization = true
 
 }
 
 resource "azurerm_role_assignment" "key_vault_secrets_officer" {
-  scope                = azurerm_key_vault.vault.id  
-  role_definition_name = "Key Vault Secrets Officer" 
-  principal_id         = data.azurerm_client_config.current.object_id 
+  scope                = azurerm_key_vault.vault.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = data.azurerm_client_config.current.object_id
 }
 
 resource "azurerm_key_vault_secret" "db_credentials" {
@@ -71,18 +71,18 @@ resource "azurerm_key_vault_secret" "db_credentials" {
 }
 
 resource "azurerm_mysql_flexible_server" "database" {
-  name = "${var.project_name}-db-${random_string.name.result}"
+  name                = "${var.project_name}-db-${random_string.name.result}"
   resource_group_name = var.resource_group_name
-  location = var.location
-  version = "8.0.21"
+  location            = var.location
+  version             = "8.0.21"
 
-  sku_name = "B_Standard_B1s"  # Basic tier, more widely supported
+  sku_name = "B_Standard_B1s" # Basic tier, more widely supported
   storage {
-    size_gb = 20
+    size_gb           = 20
     auto_grow_enabled = true
   }
 
-  administrator_login = var.db_username
+  administrator_login    = var.db_username
   administrator_password = random_password.db_password.result
 
   delegated_subnet_id = var.delegated_subnet_id
@@ -91,12 +91,12 @@ resource "azurerm_mysql_flexible_server" "database" {
   private_dns_zone_id = azurerm_private_dns_zone.mysql_dns_zone.id
 
   backup_retention_days = 7
-  
+
   depends_on = [azurerm_private_dns_zone_virtual_network_link.mysql_vnet_link]
-  
+
   lifecycle {
     ignore_changes = [
-      zone  # Zone cannot be changed after creation
+      zone # Zone cannot be changed after creation
     ]
   }
 }

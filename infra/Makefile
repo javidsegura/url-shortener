@@ -90,6 +90,16 @@ terraform-fmt: ## Format Terraform files (no credentials needed)
 	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform fmt -recursive
 
+terraform-fmt-all: ## Format all Terraform files (for pre-commit, no credentials needed)
+	@echo "$(YELLOW)Formatting all Terraform files...$(RESET)"
+	@for dir in terraform/*/environment/* terraform/*/set-up terraform/*/modules/*; do \
+		if [ -d "$$dir" ] && [ -n "$$(find $$dir -name '*.tf' -type f)" ]; then \
+			echo "$(BLUE)Formatting $$dir...$(RESET)"; \
+			cd $$dir && terraform fmt -recursive && cd - > /dev/null; \
+		fi; \
+	done
+	@echo "$(GREEN)All Terraform files formatted$(RESET)"
+
 sync_backend_env: ## Inject tf outputs into backend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."
 	$(MAKE) check_enviroment_variables

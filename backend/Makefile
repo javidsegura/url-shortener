@@ -64,6 +64,10 @@ format: ## Formats
 	@echo "$(YELLOW)Running CI formatting$(RESET)"
 	@echo "$(BLUE)Checking code formatting with ruff...$(RESET)"
 	@$(VENV_ACTIVATE) && ruff format --check src/
+
+format-fix: ## Format code (for pre-commit)
+	@echo "$(YELLOW)Formatting code with ruff...$(RESET)"
+	$(VENV_ACTIVATE) && ruff format src/
 	
 
 

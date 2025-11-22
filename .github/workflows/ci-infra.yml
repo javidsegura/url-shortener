@@ -36,7 +36,6 @@ jobs:
           ENVIRONMENT: ${{ matrix.environment }}
           CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
         run: make terraform-fmt-check
-        continue-on-error: true
       
       - name: Validate Terraform configuration
         working-directory: ./infra

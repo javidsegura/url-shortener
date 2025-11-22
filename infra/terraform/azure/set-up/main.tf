@@ -42,7 +42,7 @@ resource "azurerm_storage_account" "sa" {
 // Create blob container inside the s.a
 resource "azurerm_storage_container" "data" {
   name                  = "remote-state-data"
-  storage_account_name    = azurerm_storage_account.sa.name
+  storage_account_name  = azurerm_storage_account.sa.name
   container_access_type = "private"
 }
 

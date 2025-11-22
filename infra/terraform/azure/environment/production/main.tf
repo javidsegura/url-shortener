@@ -1,15 +1,15 @@
 terraform {
   required_providers {
-    azurerm = { 
-      source = "hashicorp/azurerm" 
-    version = "~> 3.0" # Use a modern version}
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0" # Use a modern version}
     }
   }
   backend "azurerm" {
     resource_group_name  = "BCSAI2025-DEVOPS-STUDENT-2A"
     storage_account_name = "urlshortenertfsznytxoti"
     container_name       = "remote-state-data"
-    key                  = "prod/terraform.tfstate"    
+    key                  = "prod/terraform.tfstate"
   }
 }
 

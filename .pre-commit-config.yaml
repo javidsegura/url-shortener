@@ -1,0 +1,23 @@
+repos:
+  # Backend: Format using Makefile
+  - repo: local
+    hooks:
+      - id: backend-format
+        name: Backend format (make format-fix)
+        entry: bash -c 'cd backend && source ../.venv/bin/activate && make format-fix'
+        language: system
+        files: ^backend/.*\.py$
+        pass_filenames: false
+        always_run: false
+
+  # Infra: Format Terraform using Makefile
+  - repo: local
+    hooks:
+      - id: terraform-format
+        name: Terraform format (make terraform-fmt-all)
+        entry: bash -c 'cd infra && make terraform-fmt-all'
+        language: system
+        files: ^infra/terraform/.*\.tf$
+        pass_filenames: false
+        always_run: false
+

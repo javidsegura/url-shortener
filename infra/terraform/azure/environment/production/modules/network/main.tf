@@ -50,7 +50,7 @@ resource "azurerm_route_table" "private_route_table" {
   name                = "private-route-table"
   location            = var.location
   resource_group_name = var.resource_group_name
-  
+
   # No internet route - private subnets only have local VNet routing
 }
 
@@ -128,15 +128,15 @@ resource "azurerm_network_security_group" "database_nsg" {
   # Allow MySQL (3306) only from web app ASG
   # This is the Azure equivalent of AWS security_groups = [aws_security_group.web_app_sg.id]
   security_rule {
-    name                                      = "AllowMySQL-From-WebApp"
-    priority                                  = 100
-    direction                                 = "Inbound"
-    access                                    = "Allow"
-    protocol                                  = "Tcp"
-    source_port_range                         = "*"
-    destination_port_range                    = "3306"
-    source_application_security_group_ids     = [azurerm_application_security_group.web_app_asg.id]
-    destination_address_prefix                = "*"
+    name                                  = "AllowMySQL-From-WebApp"
+    priority                              = 100
+    direction                             = "Inbound"
+    access                                = "Allow"
+    protocol                              = "Tcp"
+    source_port_range                     = "*"
+    destination_port_range                = "3306"
+    source_application_security_group_ids = [azurerm_application_security_group.web_app_asg.id]
+    destination_address_prefix            = "*"
   }
 
   # Azure allows all outbound by default
