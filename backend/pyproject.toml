@@ -21,6 +21,8 @@ dependencies = [
       "boto3-stubs[s3,secretsmanager]",
       "python-json-logger>=2.0.0",
       "azure-storage-blob>=12.19.0",
+      "azure-keyvault-secrets",
+      "azure-identity",
       "prometheus-fastapi-instrumentator==7.0.0"
 
 

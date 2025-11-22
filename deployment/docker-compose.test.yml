@@ -1,7 +1,3 @@
-# DOCS: write about waiting and race conditions with -d 
-# DOCS: write about firebase emulator
-
-
 services:
   database:
     image: mysql:8.0

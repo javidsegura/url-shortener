@@ -9,8 +9,8 @@ YELLOW = \033[33m
 BLUE = \033[34m
 RESET = \033[0m
 
-BACKEND_ENV_FILE_SYNCED_PATH = ./backend/env_config/synced/.env.$(ENVIRONMENT)
-FROTNEND_ENV_FILE_SYNCED_PATH = ./frontend/env_config/synced/.env.$(ENVIRONMENT)
+BACKEND_ENV_FILE_SYNCED_PATH = ../backend/env_config/synced/.env.$(ENVIRONMENT)
+FROTNEND_ENV_FILE_SYNCED_PATH = ../frontend/env_config/synced/.env.$(ENVIRONMENT)
 TERRAFORM_PATH = ./infra/terraform/environment/$(ENVIRONMENT)
 PROJECT_NAME = url-shortener
 

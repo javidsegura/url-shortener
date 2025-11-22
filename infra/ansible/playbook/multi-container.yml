@@ -148,4 +148,5 @@
     environment:
       ENVIRONMENT: "{{ stage_environment }}"
       BACKEND_ENV_FILE: "{{ dest_backend_env_synced_path }}"
+      SERVER_PUBLIC_IP: "{{ ansible_default_ipv4.address | default(ansible_host) }}"
     

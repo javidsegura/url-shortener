@@ -16,7 +16,7 @@ VENV = ../.venv
 VENV_ACTIVATE = source $(VENV)/bin/activate
 APP_PATH = src.url_shortener.main:app
 PORT = 8000
-BACKEND_ENV_FILE_SYNCED_PATH= ./backend/env_config/synced/.env.$(ENVIRONMENT)
+BACKEND_ENV_FILE_SYNCED_PATH= ../backend/env_config/synced/.env.$(ENVIRONMENT)
 PROJECT_NAME = url-shortener
 
 
@@ -71,10 +71,6 @@ format-fix: ## Format code (for pre-commit)
 	
 
 
-test: ## Run all tests
-	@echo "$(YELLOW)Running all tests...$(RESET)"
-	$(VENV_ACTIVATE) && python3 -m pytest test/unit/links.py -v
-
 static-security-analysis: ## Run static security analysis
 	@echo "$(BLUE)Running security checks with bandit...$(RESET)"
 	$(VENV_ACTIVATE) && bandit -r src/ -f json -o bandit-report.json || true
@@ -120,21 +116,33 @@ push_docker: ## MOVE ME TO BAckend
 	docker buildx build -t javidsegura/url_shortener_backend:$(ENVIRONMENT) --platform linux/amd64,linux/arm64 --push -f ./Dockerfile ./
 
 
+
+# 4) Tests
+pytest-run:
+	$(VENV_ACTIVATE) && pytest -s -vv \
+					--cov=url_shortener \
+					--cov-report=term-missing \
+					test/integration/endpoints/
+
+
+unit-test: ## Run all unit tests
+	@echo "$(YELLOW)Running all tests...$(RESET)"
+	$(VENV_ACTIVATE) && python3 -m pytest test/unit/database -v
+
+integration-test: ## Runn all integration tests
+	$(VENV_ACTIVATE) && python3 -m pytest -s -vv test/integration/endpoints
+	
+
+test-docker-compose-start: ## Stats docker compose for integration tests of endpoints
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../docker-compose.yml -f ../docker-compose.test.yml -p $(PROJECT_NAME) up --build 
+
+test-docker-compose-stop: ## Stops docker compose for integration tests of endpoints
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../docker-compose.yml -f ../docker-compose.test.yml -p $(PROJECT_NAME) down -v
+
+# 5) Miscellaneous
 check_enviroment_variables:
 	@if [ -z "$$ENVIRONMENT" ]; then \
 		echo "Error: ENVIRONMENT must be defined"; \
 		exit 1; \
 	fi
 	echo "Environment is: $(ENVIRONMENT)"
-
-# Tests
-pytest-run:
-	$(VENV_ACTIVATE) && pytest -s -vv \
-					--cov=url_shortener \
-					--cov-report=term-missing \
-					test/integration/endpoints/
-test-docker-compose-start: ## Stats docker compose for integration tests of endpoints
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../docker-compose.yml -f ../docker-compose.test.yml -p $(PROJECT_NAME) up --build 
-
-test-docker-compose-stop: ## Stops docker compose for integration tests of endpoints
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../docker-compose.yml -f ../docker-compose.test.yml -p $(PROJECT_NAME) down -v

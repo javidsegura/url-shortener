@@ -4,14 +4,15 @@ import pytest
 import json
 import boto3
 from url_shortener.services.infra.secrets.aws import AWSSecretsManager
-from url_shortener.core.clients import secrets_manager_client
+from url_shortener.core.clients.aws import initialize_aws_secrets_manager_client
 
 @pytest.fixture()
 def secretsmanager_setup():
       # Create test secret 
       secret_name = "my-test-secret"
-      secret_value = {"api_key": "12345"}     
-      secrets_manager_client.create_secret(
+      secret_value = {"api_key": "12345"}
+      client = initialize_aws_secrets_manager_client()
+      client.create_secret(
             Name=secret_name,
             SecretString=json.dumps(secret_value)
       )
@@ -21,7 +22,8 @@ def secretsmanager_setup():
 def secretsmanager_binary_setup():
       secret_name = "my-binary-secret"
       secret_value = b'{"api_key": "67890"}'
-      secrets_manager_client.create_secret(
+      client = initialize_aws_secrets_manager_client()
+      client.create_secret(
             Name=secret_name,
             SecretBinary=secret_value
       )

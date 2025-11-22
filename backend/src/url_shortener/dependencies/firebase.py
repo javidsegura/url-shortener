@@ -46,6 +46,3 @@ def verify_user(
 			raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{e}")
 
 	return get_token_dependency
-
-
-def is_user_admin(token: Annotated[str, Depends(oauth2scheme)]): ...

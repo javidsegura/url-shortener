@@ -16,6 +16,12 @@ services:
       image: javidsegura/url_shortener_backend:production  # Add :production tag
       ports:
         - "8000:8000"
+      healthcheck: 
+        test: ["CMD", "curl", "-f", "http://${SERVER_PUBLIC_IP}:8000/api/health/ping"]
+        interval: 30s
+        timeout: 5s
+        retries: 5
+        start_period: 5s
       env_file:
         - ${BACKEND_ENV_FILE}
       environment:

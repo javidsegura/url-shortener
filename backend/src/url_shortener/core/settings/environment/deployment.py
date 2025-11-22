@@ -38,9 +38,9 @@ class DeploymentSettings(BaseSettings):
 		return base_vars
 
 	def extract_all_variables(self):
-		self._extract_database_variables()
 		self._extract_storage_variables()
 		self._extract_app_logic_variables()
+		self._extract_database_variables()
 
 	def _extract_secret_manger_databaseb_credentials(self):
 		from url_shortener.services.infra.secrets import get_secrets_service
@@ -52,6 +52,7 @@ class DeploymentSettings(BaseSettings):
 			)
 
 		secrets_service = get_secrets_service()
+		self.AZURE_KEY_VAULT_NAME = os.getenv("AZURE_KEY_VAULT_NAME")
 		db_credentials = secrets_service.fetch_secret(secret_key=secret_key)
 		self.MYSQL_USER = db_credentials["username"]
 		self.MYSQL_PASSWORD = db_credentials["password"]

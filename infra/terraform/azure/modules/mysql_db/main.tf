@@ -100,3 +100,11 @@ resource "azurerm_mysql_flexible_server" "database" {
     ]
   }
 }
+
+# Disable require_secure_transport
+resource "azurerm_mysql_flexible_server_configuration" "require_secure_transport" {
+  name                = "require_secure_transport"
+  resource_group_name = var.resource_group_name
+  server_name         = azurerm_mysql_flexible_server.database.name
+  value               = "OFF"
+}
