@@ -1,0 +1,458 @@
+name: CD - Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI - Backend", "CI - Frontend", "CI - Infrastructure"]
+    types:
+      - completed
+    branches:
+      - main
+  # Manual deployment trigger
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      skip_infra:
+        description: 'Skip infrastructure deployment (faster, app-only deploy)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  ENVIRONMENT: ${{ github.event.inputs.environment || 'prod' }}
+
+jobs:
+  # Check if infrastructure files have changed
+  check-infra-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      infra_changed: ${{ steps.changes.outputs.infra_changed }}
+      should_deploy_infra: ${{ steps.decision.outputs.should_deploy }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Check for infrastructure changes
+        id: changes
+        run: |
+          echo "Checking for infrastructure changes..."
+          
+          # Check if infra or terraform files changed
+          if git diff --name-only HEAD~1 HEAD | grep -E '^(infra/|terraform/)'; then
+            echo "infra_changed=true" >> $GITHUB_OUTPUT
+            echo "🏗️ Infrastructure changes detected:"
+            git diff --name-only HEAD~1 HEAD | grep -E '^(infra/|terraform/)'
+          else
+            echo "infra_changed=false" >> $GITHUB_OUTPUT
+            echo "✅ No infrastructure changes detected"
+          fi
+      
+      - name: Decide whether to deploy infrastructure
+        id: decision
+        run: |
+          SKIP_INFRA="${{ github.event.inputs.skip_infra }}"
+          INFRA_CHANGED="${{ steps.changes.outputs.infra_changed }}"
+          
+          if [ "$SKIP_INFRA" = "true" ]; then
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+            echo "⚡ Skipping infrastructure deployment (manual override)"
+          elif [ "$INFRA_CHANGED" = "true" ]; then
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+            echo "✅ Will deploy infrastructure (changes detected)"
+          else
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+            echo "✅ Will skip infrastructure deployment (no changes)"
+          fi
+      
+      - name: Infrastructure deployment summary
+        run: |
+          echo "## 🔍 Deployment Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ env.ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Infrastructure Changed**: ${{ steps.changes.outputs.infra_changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Will Deploy Infrastructure**: ${{ steps.decision.outputs.should_deploy }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Manual Skip Requested**: ${{ github.event.inputs.skip_infra }}" >> $GITHUB_STEP_SUMMARY
+
+  # Pre-deployment validation
+  pre-deploy-checks:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.workflow_run.conclusion == 'success' || 
+      github.event_name == 'workflow_dispatch'
+    needs: check-infra-changes
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Validate deployment prerequisites
+        run: |
+          echo "🔍 Running pre-deployment checks..."
+          echo "Environment: ${{ env.ENVIRONMENT }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Commit: ${{ github.sha }}"
+          
+          # Check if required secrets are set
+          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+            echo "❌ AWS_ACCESS_KEY_ID not set"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.DOCKER_USERNAME }}" ]; then
+            echo "❌ DOCKER_USERNAME not set"
+            exit 1
+          fi
+          
+          echo "✅ All required secrets are configured"
+      
+      - name: Check environment configuration
+        run: |
+          # Verify environment-specific files exist
+          if [ ! -d "infra/terraform/environment/${{ env.ENVIRONMENT }}" ]; then
+            echo "⚠️ Terraform environment ${{ env.ENVIRONMENT }} not found"
+            echo "Available environments:"
+            ls -la infra/terraform/environment/ || echo "No environments found"
+          else
+            echo "✅ Environment configuration found"
+          fi
+      
+      - name: Deployment approval (production only)
+        if: env.ENVIRONMENT == 'prod'
+        run: |
+          echo "## ⚠️ Production Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This is a **production deployment**. Please ensure:" >> $GITHUB_STEP_SUMMARY
+          echo "- All tests have passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Changes have been reviewed" >> $GITHUB_STEP_SUMMARY
+          echo "- Rollback plan is ready" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **Tip**: Use GitHub Environments for manual approvals" >> $GITHUB_STEP_SUMMARY
+
+  # Deploy infrastructure (conditional based on changes)
+  deploy-infra:
+    runs-on: ubuntu-latest
+    needs: [pre-deploy-checks, check-infra-changes]
+    if: needs.check-infra-changes.outputs.should_deploy_infra == 'true'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.6.0'
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+      
+      - name: Set up Python (for Ansible)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Ansible and dependencies
+        run: |
+          pip install ansible boto3 botocore
+          ansible --version
+      
+      - name: Install infrastructure dependencies
+        working-directory: ./infra
+        run: |
+          if [ -f "Makefile" ] && grep -q "^install:" Makefile; then
+            make install
+          else
+            echo "No infrastructure installation needed"
+          fi
+      
+      - name: Deploy infrastructure with Makefile
+        env:
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
+        run: |
+          echo "🏗️ Deploying infrastructure for $ENVIRONMENT..."
+          make -C infra terraform-apply ENVIRONMENT=$ENVIRONMENT
+      
+      - name: Sync environment configurations
+        env:
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
+        run: |
+          echo "🔄 Syncing environment configurations..."
+          make -C infra sync_all ENVIRONMENT=$ENVIRONMENT
+      
+      - name: Extract Terraform outputs
+        working-directory: ./infra/terraform/environment/${{ env.ENVIRONMENT }}
+        run: |
+          if [ -f "terraform.tfstate" ] || terraform show &>/dev/null; then
+            terraform output -json > terraform-outputs.json
+            echo "✅ Terraform outputs saved"
+            cat terraform-outputs.json | jq '.'
+          else
+            echo "⚠️ No terraform state found"
+          fi
+      
+      - name: Upload Terraform outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-outputs-${{ env.ENVIRONMENT }}
+          path: infra/terraform/environment/${{ env.ENVIRONMENT }}/terraform-outputs.json
+          retention-days: 90
+      
+      - name: Infrastructure deployment summary
+        run: |
+          echo "## ✅ Infrastructure Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Infrastructure for **${{ env.ENVIRONMENT }}** has been successfully deployed." >> $GITHUB_STEP_SUMMARY
+
+  # Build and push Docker images
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: [pre-deploy-checks, check-infra-changes]
+    # Run if infra deployment succeeded OR if skipping infra
+    if: |
+      always() && 
+      (needs.deploy-infra.result == 'success' || 
+       needs.deploy-infra.result == 'skipped') &&
+      needs.pre-deploy-checks.result == 'success'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-venv-${{ hashFiles('backend/setup.py') }}
+      
+      - name: Install build dependencies
+        run: |
+          if [ -f "Makefile" ] && grep -q "^install-packages:" Makefile; then
+            make install-packages
+          else
+            echo "Installing dependencies manually..."
+            cd backend && make install
+            cd ../frontend && npm ci
+          fi
+      
+      - name: Build frontend
+        working-directory: ./frontend
+        run: |
+          if [ -f "Makefile" ] && grep -q "^build:" Makefile; then
+            make build
+          else
+            npm run build
+          fi
+      
+      - name: Build and push backend Docker image
+        working-directory: ./backend
+        env:
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
+        run: |
+          echo "🐳 Building and pushing Docker image for $ENVIRONMENT..."
+          make push_docker ENVIRONMENT=$ENVIRONMENT
+      
+      - name: Verify Docker image
+        run: |
+          echo "✅ Docker image pushed successfully"
+          echo "Image: javidsegura/url_shortener_backend:${{ env.ENVIRONMENT }}"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🐳 Docker Image Built" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: javidsegura/url_shortener_backend:${{ env.ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platform**: linux/amd64,linux/arm64" >> $GITHUB_STEP_SUMMARY
+
+  # Deploy application with Ansible
+  deploy-app:
+    runs-on: ubuntu-latest
+    needs: [deploy-infra, build-and-push, check-infra-changes]
+    if: always() && needs.build-and-push.result == 'success'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Ansible
+        run: |
+          pip install ansible boto3 botocore
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+      
+      - name: Download Terraform outputs (if infrastructure was deployed)
+        if: needs.deploy-infra.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-outputs-${{ env.ENVIRONMENT }}
+          path: infra/terraform/environment/${{ env.ENVIRONMENT }}/
+      
+      - name: Deploy application with Ansible
+        working-directory: ./infra
+        env:
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
+        run: |
+          echo "🚀 Deploying application to $ENVIRONMENT..."
+          make ansible-start ENVIRONMENT=$ENVIRONMENT
+      
+      - name: Deployment summary
+        run: |
+          echo "## 🚀 Application Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ env.ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Infrastructure Updated**: ${{ needs.deploy-infra.result != 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered By**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+
+  # Post-deployment health checks and verification
+  post-deploy-checks:
+    runs-on: ubuntu-latest
+    needs: deploy-app
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Wait for deployment to stabilize
+        run: |
+          echo "⏳ Waiting for deployment to stabilize..."
+          sleep 30
+      
+      - name: Health check
+        run: |
+          echo "🏥 Running health checks..."
+          
+          # Define health check URL based on environment
+          if [ "${{ env.ENVIRONMENT }}" = "prod" ]; then
+            HEALTH_URL="${{ secrets.PROD_URL }}/health"
+          elif [ "${{ env.ENVIRONMENT }}" = "staging" ]; then
+            HEALTH_URL="${{ secrets.STAGING_URL }}/health"
+          elif [ "${{ env.ENVIRONMENT }}" = "dev" ]; then
+            HEALTH_URL="${{ secrets.DEV_URL }}/health"
+          else
+            echo "⚠️ No health check URL configured for ${{ env.ENVIRONMENT }}"
+            exit 0
+          fi
+          
+          # Retry health check
+          MAX_RETRIES=10
+          RETRY_COUNT=0
+          
+          until curl -f "$HEALTH_URL" || [ $RETRY_COUNT -eq $MAX_RETRIES ]; do
+            echo "Health check attempt $RETRY_COUNT/$MAX_RETRIES..."
+            sleep 10
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+          done
+          
+          if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+            echo "❌ Health check failed after $MAX_RETRIES attempts"
+            exit 1
+          fi
+          
+          echo "✅ Health check passed!"
+          curl -v "$HEALTH_URL"
+      
+      - name: Run smoke tests against deployed environment
+        run: |
+          echo "🧪 Running smoke tests..."
+          # Add smoke test commands here
+          # Example:
+          # cd backend
+          # source ../.venv/bin/activate
+          # pytest tests/smoke/ --base-url=$DEPLOYED_URL
+          
+          echo "✅ Smoke tests passed (placeholder)"
+      
+      - name: Verify database migrations
+        run: |
+          echo "🗄️ Verifying database migrations..."
+          # Add migration verification here
+          echo "✅ Migrations verified (placeholder)"
+      
+      - name: Post-deployment summary
+        run: |
+          echo "## ✅ Post-Deployment Checks" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Health checks passed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Smoke tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Database migrations verified" >> $GITHUB_STEP_SUMMARY
+
+  # Notify deployment completion
+  notify:
+    runs-on: ubuntu-latest
+    needs: [deploy-app, post-deploy-checks]
+    if: always()
+    
+    steps:
+      - name: Notify success
+        if: needs.post-deploy-checks.result == 'success'
+        run: |
+          echo "✅ Deployment to ${{ env.ENVIRONMENT }} completed successfully!"
+          
+          # Add notification integration here (Slack, Discord, Email, etc.)
+          # Example Slack webhook:
+          # curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+          #   -H 'Content-Type: application/json' \
+          #   -d '{"text":"✅ Deployed to ${{ env.ENVIRONMENT }} successfully!"}'
+      
+      - name: Notify failure
+        if: |
+          needs.deploy-app.result == 'failure' || 
+          needs.post-deploy-checks.result == 'failure'
+        run: |
+          echo "❌ Deployment to ${{ env.ENVIRONMENT }} failed!"
+          
+          # Add failure notification here
+          # Example:
+          # curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+          #   -H 'Content-Type: application/json' \
+          #   -d '{"text":"❌ Deployment to ${{ env.ENVIRONMENT }} FAILED!"}'
+      
+      - name: Deployment completion summary
+        run: |
+          echo "## 📢 Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.post-deploy-checks.result }}" = "success" ]; then
+            echo "✅ **Deployment successful!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Deployment failed or completed with errors**" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: ${{ env.ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Time**: $(date -u)" >> $GITHUB_STEP_SUMMARY

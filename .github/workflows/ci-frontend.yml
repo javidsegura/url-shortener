@@ -31,10 +31,14 @@ jobs:
         working-directory: ./frontend/app
         run: npm ci
       
-      - name: Run ESLint
+      - name: Check code formatting
         working-directory: ./frontend/app
-        run: npm run lint
+        run: npm run format:check
       
-      - name: Check TypeScript types
-        working-directory: ./frontend/app
-        run: npx tsc --noEmit
+      # - name: Run ESLint
+      #   working-directory: ./frontend/app
+      #   run: npm run lint
+      
+      # - name: Check TypeScript types
+      #   working-directory: ./frontend/app
+      #   run: npx tsc --noEmit

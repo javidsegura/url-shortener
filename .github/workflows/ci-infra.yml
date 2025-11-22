@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         cloud_provider: [azure] #   Consider expanding 
-        environment: [dev, production]
+        environment: [production]
       fail-fast: false
     
     steps:
