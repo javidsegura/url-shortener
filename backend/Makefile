@@ -1,5 +1,7 @@
 .PHONY: help dev dev-debug install db-models lint lint-check pytest-run  test-docker-compose-start
 
+SHELL := /bin/bash
+
 # Colors for output
 RED = \033[31m
 GREEN = \033[32m
@@ -69,7 +71,7 @@ test: ## Run all tests
 	@echo "$(YELLOW)Running all tests...$(RESET)"
 	$(VENV_ACTIVATE) && python3 -m pytest test/unit/links.py -v
 
-static-security-analysis:
+static-security-analysis: ## Run static security analysis
 	@echo "$(BLUE)Running security checks with bandit...$(RESET)"
 	$(VENV_ACTIVATE) && bandit -r src/ -f json -o bandit-report.json || true
 	@echo "$(BLUE)Running security checks with safety...$(RESET)"
