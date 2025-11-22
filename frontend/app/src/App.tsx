@@ -1,15 +1,14 @@
+import { Routes, Route } from 'react-router-dom';
 
-import { Routes, Route } from "react-router-dom"
+import AppLayout from './layout/app_layout';
 
-import AppLayout from "./layout/app_layout"
+import Home from './pages/Home';
+import User from './pages/User';
+import URLLink from './pages/URLLink';
+import Auth from './pages/Auth';
+import PrivateRoutes from './components/auth/routes/PrivateRoutes';
 
-import Home from "./pages/Home"
-import User from "./pages/User"
-import URLLink from "./pages/URLLink"
-import Auth from "./pages/Auth"
-import PrivateRoutes from "./components/auth/routes/PrivateRoutes"
-
-function App(){
+function App() {
   return (
     <Routes>
       <Route path="/" element={<AppLayout />}>
@@ -22,8 +21,7 @@ function App(){
       </Route>
       <Route path="*" element={<p>404 error</p>} />
     </Routes>
-  )
+  );
 }
 
-
-export default App
+export default App;

@@ -1,19 +1,25 @@
-import { useState } from "react"
-import LogInForm from "./log_in"
-import RegisterForm from "./register"
-import { GoogleAuthButton } from "./federated_providers/federated-providers"
+import { useState } from 'react';
+import LogInForm from './log_in';
+import RegisterForm from './register';
+import { GoogleAuthButton } from './federated_providers/federated-providers';
 
 export default function AuthForm() {
-  const [registerActive, setRegisterActive] = useState(true)
+  const [registerActive, setRegisterActive] = useState(true);
 
   return (
-    <div id="main-space" className="flex items-center justify-center w-full h-full bg-gradient-to-br from-gray-50 to-gray-100">
+    <div
+      id="main-space"
+      className="flex items-center justify-center w-full h-full bg-gradient-to-br from-gray-50 to-gray-100"
+    >
       <div className="flex flex-col w-[400px] bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
         <h1 className="text-3xl font-semibold text-center mb-6 text-gray-800">
-          {registerActive ? "Create an account" : "Welcome back"}
+          {registerActive ? 'Create an account' : 'Welcome back'}
         </h1>
 
-        <div id="manual-form-with-federated-providers" className="flex flex-col space-y-4">
+        <div
+          id="manual-form-with-federated-providers"
+          className="flex flex-col space-y-4"
+        >
           <div id="form-layout">
             {registerActive ? (
               <RegisterForm setRegisterActive={setRegisterActive} />
@@ -37,17 +43,17 @@ export default function AuthForm() {
         >
           {registerActive ? (
             <>
-              Already have an account?{" "}
+              Already have an account?{' '}
               <u className="font-medium">Log in here</u>
             </>
           ) : (
             <>
-              Don’t have an account?{" "}
+              Don’t have an account?{' '}
               <u className="font-medium">Register here</u>
             </>
           )}
         </p>
       </div>
     </div>
-  )
+  );
 }

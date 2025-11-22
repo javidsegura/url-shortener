@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { User } from 'firebase/auth';
-import { auth } from "../../firebase"
+import { auth } from '../../firebase';
 
 export const useAuth = () => {
-  // Shows user token and if its loading 
+  // Shows user token and if its loading
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -18,5 +18,5 @@ export const useAuth = () => {
     return () => unsubscribe();
   }, []);
 
-  return [ user, loading ];
+  return [user, loading];
 };

@@ -10,6 +10,17 @@ repos:
         pass_filenames: false
         always_run: false
 
+  # Frontend: Format frontend using Makefile
+  - repo: local
+    hooks:
+      - id: frontend-format
+        name: Frontend format 
+        entry: bash -c 'cd frontend && make format'
+        language: system
+        files: ^frontend/app/.*\.*$
+        pass_filenames: false
+        always_run: false
+
   # Infra: Format Terraform using Makefile
   - repo: local
     hooks:

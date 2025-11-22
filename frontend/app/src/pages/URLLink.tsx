@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { config } from "../core/config";
-import { useAuth } from "../hooks/useAuth";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { config } from '../core/config';
+import { useAuth } from '../hooks/useAuth';
 
 type ApiSuccess = {
   // server should return this; supports a few fallbacks just in case
@@ -21,8 +21,8 @@ type ApiError = {
 export default function URLLink() {
   const [user, isLoadingAuth] = useAuth();
 
-  const [originalUrl, setOriginalUrl] = useState("");
-  const [expiresIn, setExpiresIn] = useState<string>("");
+  const [originalUrl, setOriginalUrl] = useState('');
+  const [expiresIn, setExpiresIn] = useState<string>('');
   const [touched, setTouched] = useState<{ url?: boolean; exp?: boolean }>({});
 
   const [loading, setLoading] = useState(false);
@@ -34,29 +34,34 @@ export default function URLLink() {
 
   // ---------- validation ----------
   const urlError = useMemo(() => {
-    if (!touched.url && originalUrl === "") return "";
-    if (!originalUrl) return "URL is required.";
+    if (!touched.url && originalUrl === '') return '';
+    if (!originalUrl) return 'URL is required.';
     try {
       const u = new URL(originalUrl);
-      if (u.protocol !== "http:" && u.protocol !== "https:")
-        return "Only http:// or https:// URLs are allowed.";
-      return "";
+      if (u.protocol !== 'http:' && u.protocol !== 'https:')
+        return 'Only http:// or https:// URLs are allowed.';
+      return '';
     } catch {
-      return "Enter a valid URL (e.g., https://example.com/path).";
+      return 'Enter a valid URL (e.g., https://example.com/path).';
     }
   }, [originalUrl, touched.url]);
 
   const expError = useMemo(() => {
-    if (!touched.exp && expiresIn === "") return "";
-    if (expiresIn === "") return "Expiration is required.";
+    if (!touched.exp && expiresIn === '') return '';
+    if (expiresIn === '') return 'Expiration is required.';
     const n = Number(expiresIn);
-    if (!Number.isInteger(n)) return "Expiration must be an integer number of minutes.";
-    if (n < 1) return "Expiration must be at least 1 minute.";
-    if (n > 10080) return "Expiration cannot exceed 10080 minutes (7 days).";
-    return "";
+    if (!Number.isInteger(n))
+      return 'Expiration must be an integer number of minutes.';
+    if (n < 1) return 'Expiration must be at least 1 minute.';
+    if (n > 10080) return 'Expiration cannot exceed 10080 minutes (7 days).';
+    return '';
   }, [expiresIn, touched.exp]);
 
-  const formValid = urlError === "" && expError === "" && originalUrl !== "" && expiresIn !== "";
+  const formValid =
+    urlError === '' &&
+    expError === '' &&
+    originalUrl !== '' &&
+    expiresIn !== '';
 
   // ---------- shareable link ----------
   const shareCode = useMemo(() => {
@@ -78,7 +83,9 @@ export default function URLLink() {
   }, [shareCode]);
 
   // ---------- submit ----------
-  const handle_form_submission = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handle_form_submission = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
     setTouched({ url: true, exp: true });
@@ -93,7 +100,7 @@ export default function URLLink() {
     }
 
     if (!user && !isLoadingAuth) {
-      setServerError("You must be logged in to shorten URLs.");
+      setServerError('You must be logged in to shorten URLs.');
       return;
     }
 
@@ -101,10 +108,10 @@ export default function URLLink() {
     try {
       const token = await user?.getIdToken?.();
 
-      const response = await fetch(new URL("link", config.BASE_API_URL).href, {
-        method: "POST",
+      const response = await fetch(new URL('link', config.BASE_API_URL).href, {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
@@ -133,7 +140,7 @@ export default function URLLink() {
 
       setServerSuccess(payload as ApiSuccess);
     } catch (e: any) {
-      setServerError(e?.message || "Unexpected error. Please try again.");
+      setServerError(e?.message || 'Unexpected error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -159,15 +166,25 @@ export default function URLLink() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="bg-white shadow-md rounded-lg p-6">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-1">Shorten a URL</h1>
+        <h1 className="text-2xl font-semibold text-gray-800 mb-1">
+          Shorten a URL
+        </h1>
         <p className="text-gray-600 mb-6">
-          Enter a full URL and how long it should stay active. Both fields are required.
+          Enter a full URL and how long it should stay active. Both fields are
+          required.
         </p>
 
-        <form onSubmit={handle_form_submission} noValidate className="space-y-5">
+        <form
+          onSubmit={handle_form_submission}
+          noValidate
+          className="space-y-5"
+        >
           {/* URL */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="original_url">
+            <label
+              className="block text-sm font-medium text-gray-700 mb-1"
+              htmlFor="original_url"
+            >
               URL link <span className="text-red-600">*</span>
             </label>
             <input
@@ -178,7 +195,7 @@ export default function URLLink() {
               inputMode="url"
               placeholder="https://example.com/very/long/link"
               className={`w-full rounded-md border px-3 py-2 outline-none transition focus:ring-2 focus:ring-blue-500 ${
-                urlError ? "border-red-500" : "border-gray-300"
+                urlError ? 'border-red-500' : 'border-gray-300'
               }`}
               value={originalUrl}
               onChange={(e) => setOriginalUrl(e.target.value)}
@@ -186,12 +203,17 @@ export default function URLLink() {
               aria-invalid={!!urlError}
               required
             />
-            {urlError && <p className="mt-1 text-sm text-red-600">{urlError}</p>}
+            {urlError && (
+              <p className="mt-1 text-sm text-red-600">{urlError}</p>
+            )}
           </div>
 
           {/* Expires In */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="expires_in">
+            <label
+              className="block text-sm font-medium text-gray-700 mb-1"
+              htmlFor="expires_in"
+            >
               Expires in (minutes) <span className="text-red-600">*</span>
             </label>
             <input
@@ -202,7 +224,7 @@ export default function URLLink() {
               inputMode="numeric"
               placeholder="e.g., 60"
               className={`w-56 rounded-md border px-3 py-2 outline-none transition focus:ring-2 focus:ring-blue-500 ${
-                expError ? "border-red-500" : "border-gray-300"
+                expError ? 'border-red-500' : 'border-gray-300'
               }`}
               value={expiresIn}
               onChange={(e) => setExpiresIn(e.target.value)}
@@ -213,8 +235,12 @@ export default function URLLink() {
               aria-invalid={!!expError}
               required
             />
-            <p className="mt-1 text-xs text-gray-500">Allowed: 1 — 10080 (7 days)</p>
-            {expError && <p className="mt-1 text-sm text-red-600">{expError}</p>}
+            <p className="mt-1 text-xs text-gray-500">
+              Allowed: 1 — 10080 (7 days)
+            </p>
+            {expError && (
+              <p className="mt-1 text-sm text-red-600">{expError}</p>
+            )}
           </div>
 
           {/* Submit */}
@@ -224,11 +250,11 @@ export default function URLLink() {
               disabled={!formValid || loading || isLoadingAuth}
               className={`inline-flex items-center justify-center rounded-lg px-5 py-2.5 font-semibold text-white transition ${
                 !formValid || loading || isLoadingAuth
-                  ? "bg-blue-300 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
+                  ? 'bg-blue-300 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
               }`}
             >
-              {loading ? "Shortening..." : "Shorten URL"}
+              {loading ? 'Shortening...' : 'Shorten URL'}
             </button>
           </div>
         </form>
@@ -247,7 +273,7 @@ export default function URLLink() {
               <p className="font-medium mb-2">Success</p>
 
               {/* Show any server message if present */}
-              {"message" in serverSuccess && serverSuccess.message && (
+              {'message' in serverSuccess && serverSuccess.message && (
                 <p className="text-sm mb-2">{String(serverSuccess.message)}</p>
               )}
 
@@ -271,21 +297,26 @@ export default function URLLink() {
                 </div>
               ) : (
                 <p className="text-sm">
-                  Shortened link created, but the response didn’t include{" "}
-                  <code>return_shortened_url</code>. Check server response below.
+                  Shortened link created, but the response didn’t include{' '}
+                  <code>return_shortened_url</code>. Check server response
+                  below.
                 </p>
               )}
 
               {/* Always show raw payload for transparency/debugging */}
               <details className="mt-3">
-                <summary className="cursor-pointer text-sm underline">Show server response</summary>
+                <summary className="cursor-pointer text-sm underline">
+                  Show server response
+                </summary>
                 <pre className="mt-2 text-xs text-gray-800 bg-white rounded p-3 border border-gray-200 overflow-auto">
                   {JSON.stringify(serverSuccess, null, 2)}
                 </pre>
               </details>
 
-              {"copied" in serverSuccess && serverSuccess.copied && (
-                <p className="mt-2 text-sm text-green-700">Copied to clipboard!</p>
+              {'copied' in serverSuccess && serverSuccess.copied && (
+                <p className="mt-2 text-sm text-green-700">
+                  Copied to clipboard!
+                </p>
               )}
             </div>
           )}

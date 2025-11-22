@@ -1,28 +1,26 @@
-import { useState } from "react"
+import { useState } from 'react';
 
 export const useForm = (initialState) => {
-      const [formData, setFormData] = useState(initialState);
+  const [formData, setFormData] = useState(initialState);
 
-      const handleFormChange = (event) => {
-            const { name, value, type, checked, files } = event.target;
+  const handleFormChange = (event) => {
+    const { name, value, type, checked, files } = event.target;
 
-            let fieldvalue; 
+    let fieldvalue;
 
-            switch (type){
-                  case "file":
-                        fieldvalue = files[0];
-                        break;
-                  default:
-                        fieldvalue = value;
-            }
+    switch (type) {
+      case 'file':
+        fieldvalue = files[0];
+        break;
+      default:
+        fieldvalue = value;
+    }
 
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: fieldvalue,
+    }));
+  };
 
-            setFormData(prevData => ({
-                  ...prevData,
-                  [name]: fieldvalue
-            })
-            )
-      }
-
-      return [ formData, handleFormChange ] ;
-}
+  return [formData, handleFormChange];
+};

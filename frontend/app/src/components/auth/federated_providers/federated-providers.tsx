@@ -1,6 +1,6 @@
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "../../../../firebase";
-import { config } from "@/core/config";
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '../../../../firebase';
+import { config } from '@/core/config';
 
 export function GoogleAuthButton() {
   const handleRegisterWithGoogle = async (event) => {
@@ -10,27 +10,30 @@ export function GoogleAuthButton() {
       const provider = new GoogleAuthProvider();
       const userCredentials = await signInWithPopup(auth, provider);
       const user = userCredentials.user;
-      console.log("User signed up:", user);
+      console.log('User signed up:', user);
 
-      const dbResponse = await fetch(new URL("user", config.BASE_API_URL).href, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: user.uid,
-          displayable_name: user.displayName,
-          email: user.email,
-          country: "ES",
-          profile_pic_object_name: user.photoURL,
-        }),
-      });
+      const dbResponse = await fetch(
+        new URL('user', config.BASE_API_URL).href,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: user.uid,
+            displayable_name: user.displayName,
+            email: user.email,
+            country: 'ES',
+            profile_pic_object_name: user.photoURL,
+          }),
+        }
+      );
 
       if (!dbResponse.ok) {
-        throw new Error("An error occurred while storing user info.");
+        throw new Error('An error occurred while storing user info.');
       }
     } catch (error) {
-      console.error("Error occurred:", error.message);
+      console.error('Error occurred:', error.message);
     }
   };
 
