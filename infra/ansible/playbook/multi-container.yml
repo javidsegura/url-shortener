@@ -3,6 +3,7 @@
   become: yes
 
   vars:
+    target_user: "{{ ansible_user_id }}"
     remote_project_path: "/opt/{{ project_name }}"
     project_name: "url-shortener"
     src_backend_env_synced_path: "../../../backend/env_config/synced/.env.{{ stage_environment }}"
@@ -11,7 +12,17 @@
   - name: Show resolved paths
     debug:
       msg: "Source path is {{ src_backend_env_synced_path }} and destination path is {{ dest_backend_env_synced_path }}"
-  - name: Ensure Docker and dependencies are installed
+  - name: Ensure Docker and dependencies are installed (APT)
+    ansible.builtin.apt:
+      name: 
+        - docker.io
+        - python3
+        - python3-pip
+      state: present
+      update_cache: yes
+    when: ansible_pkg_mgr == "apt"
+
+  - name: Ensure Docker and dependencies are installed (DNF)
     ansible.builtin.dnf:
       name: 
         - docker
@@ -19,6 +30,7 @@
         - python3-pip
       state: present
       update_cache: yes
+    when: ansible_pkg_mgr == "dnf"
       
   - name: Start Docker service
     ansible.builtin.service:
@@ -28,7 +40,7 @@
       
   - name: Add ec2 user to the docker group
     ansible.builtin.user:
-      name: ec2-user
+      name: "{{ target_user }}"
       groups: docker 
       append: yes
       
@@ -39,28 +51,28 @@
     ansible.builtin.file:
       path: "{{ remote_project_path }}"
       state: directory
-      owner: ec2-user
+      owner: "{{ target_user }}"
       group: docker
       mode: "0755"
   - name: Create frontend app directory
     ansible.builtin.file:
       path: "{{ remote_project_path }}/frontend/app"
       state: directory
-      owner: ec2-user
+      owner: "{{ target_user }}"
       group: docker
       mode: "0755"
   - name: Create backend directory
     ansible.builtin.file:
       path: "{{ remote_project_path }}/backend"
       state: directory
-      owner: ec2-user
+      owner: "{{ target_user }}"
       group: docker
       mode: "0755"
   - name: Create backend env_config directory structure
     ansible.builtin.file:
       path: "{{ remote_project_path }}/backend/env_config/synced"
       state: directory
-      owner: ec2-user
+      owner: "{{ target_user }}"
       group: docker
       mode: "0755"
       
@@ -68,7 +80,7 @@
     ansible.builtin.copy:
       src: "../../../{{ item }}"
       dest: "{{ remote_project_path }}/{{ item }}"
-      owner: ec2-user
+      owner: "{{ target_user }}"
       group: docker
       mode: "0644"
     loop:
@@ -80,7 +92,7 @@
     ansible.builtin.copy:
       src: "{{ src_backend_env_synced_path  }}"
       dest: "{{ dest_backend_env_synced_path }}"
-      owner: ec2-user
+      owner: "{{ target_user }}"
       group: docker
       mode: "0644"
       directory_mode: "0755"
@@ -89,7 +101,7 @@
     ansible.builtin.copy:
       src: "../../../frontend/app/dist/"
       dest: "{{ remote_project_path }}/frontend/app/dist/"
-      owner: ec2-user
+      owner: "{{ target_user }}"
       group: docker
       mode: "0644"
       directory_mode: "0755"
@@ -115,7 +127,7 @@
       name: docker
       state: present
       extra_args: "--user"
-    become_user: ec2-user
+    become_user: "{{ target_user }}"
 
   - name: Stop existing Docker Compose services
     community.docker.docker_compose_v2:

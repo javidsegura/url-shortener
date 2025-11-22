@@ -10,7 +10,7 @@ class ProdConnectionModelAWS(BaseModel):
 class ProdConnectionModelAzure(BaseModel):
       VM_APP_SERVER_SSH_USER : str
       VM_APP_SERVER_PUBLIC_IP : str
-      VM_SERVER_SSH_PRIVATE_KEY_FILE_PATH: str
+      VM_APP_SERVER_SSH_PRIVATE_KEY_FILE_PATH: str
       MYSQL_HOST : str
 
 

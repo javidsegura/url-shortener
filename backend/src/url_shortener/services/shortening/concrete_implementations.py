@@ -8,18 +8,20 @@ from abc import ABC, abstractmethod
 from hashlib import sha256
 
 
-class Shortener(ABC): # Abstract product
-	def __init__(self, 
-				max_length: int) -> None:
+class Shortener(ABC):  # Abstract product
+	def __init__(self, max_length: int) -> None:
 		if max_length <= 3:
-			raise ValueError(f"Length of shortened url must be larger than 3 chars. Currently is: {max_length}")
+			raise ValueError(
+				f"Length of shortened url must be larger than 3 chars. Currently is: {max_length}"
+			)
 		self.max_length = max_length
 
 	@abstractmethod
-	def shorten_url(self, original_url: str) -> str: 
+	def shorten_url(self, original_url: str) -> str:
 		pass
 
-class RandomString(Shortener): # Concrete product 1
+
+class RandomString(Shortener):  # Concrete product 1
 	def __init__(self, max_length: int) -> None:
 		super().__init__(max_length)
 
@@ -31,7 +33,7 @@ class RandomString(Shortener): # Concrete product 1
 		return shortened_url
 
 
-class EncryptedString(Shortener): # Concrete product 2
+class EncryptedString(Shortener):  # Concrete product 2
 	def __init__(self, max_length: int) -> None:
 		super().__init__(max_length)
 
@@ -41,11 +43,11 @@ class EncryptedString(Shortener): # Concrete product 2
 		return shortened_url
 
 
-class CounterEncodedString(Shortener): # Concrete product 3
+class CounterEncodedString(Shortener):  # Concrete product 3
 	def __init__(self, max_length: int) -> None:
 		super().__init__(max_length)
 
-	def shorten_url(self, original_url : str) -> str:
+	def shorten_url(self, original_url: str) -> str:
 		value = GLOBAL_COUNTER.increment()
 		return self._encode_counter(counter=value)
 
@@ -62,7 +64,8 @@ class CounterEncodedString(Shortener): # Concrete product 3
 		# Pad or truncate to desired max_length
 		return result.zfill(self.max_length)[: self.max_length]
 
-class Counter:  
+
+class Counter:
 	def __init__(self) -> None:
 		self._value = 0
 		self._lock = threading.Lock()

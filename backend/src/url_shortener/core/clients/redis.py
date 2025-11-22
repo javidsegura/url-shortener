@@ -1,9 +1,9 @@
+import logging
+
 import redis.asyncio as r
 from redis.client import Redis
 
 from url_shortener.core.settings import initialize_settings
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,6 @@ class RedisClientConnector:
 	def __init__(self) -> None:
 		self._client = None
 		self.app_settings = initialize_settings()
-
 
 	async def connect(self) -> Redis:
 		if not self._client:
@@ -38,7 +37,10 @@ class RedisClientConnector:
 			await self._client.aclose()
 			self._client = None
 
+
 redis_client = None
+
+
 def initialize_redis_client():
 	global redis_client
 	if not redis_client:

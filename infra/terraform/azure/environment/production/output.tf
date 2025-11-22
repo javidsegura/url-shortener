@@ -6,7 +6,7 @@ output "storage_account_name" {
   value       = module.blob_storage.storage_account_name
 }
 
-output "storage_container_name" {
+output "azure_storage_container_name" {
   description = "Name of the blob container for images"
   value       = module.blob_storage.storage_container_name
 }
@@ -20,12 +20,12 @@ output "mysql_host" {
   value       = module.mysql_db.database_fqdn
 }
 
-output "key_vault_db_secret_name" {
+output "SECRETS_MANAGER_DB_CREDENTIALS_KEY" {
   description = "Name of the Key Vault secret containing DB credentials"
   value       = module.mysql_db.db_credentials_secret_name
 }
 
-output "key_vault_name" {
+output "azure_key_vault_name" {
   description = "Name of the Key Vault containing DB credentials"
   value       = module.mysql_db.key_vault_name
 }
@@ -48,8 +48,7 @@ output "vm_app_server_ssh_user" {
   description = "SSH username for the VM"
   value       = "azureuser"
 }
-
-output "vm_server_ssh_private_key_file_path" {
+output "vm_app_server_ssh_private_key_file_path" {
   description = "Path to the SSH private key file"
   value       = abspath(pathexpand(var.ssh_key_local_path))
 }

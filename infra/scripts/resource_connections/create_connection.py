@@ -69,7 +69,7 @@ class ConnectionEstabisher():
                   elif self.cloud_provider == "AZURE":
                         SSH_USER = self.terraform_outputs.VM_APP_SERVER_SSH_USER
                         PUBLIC_IP = self.terraform_outputs.VM_APP_SERVER_PUBLIC_IP
-                        SSH_PRIVATE_KEY_FILE_PATH = self.terraform_outputs.VM_SERVER_SSH_PRIVATE_KEY_FILE_PATH
+                        SSH_PRIVATE_KEY_FILE_PATH = self.terraform_outputs.VM_APP_SERVER_SSH_PRIVATE_KEY_FILE_PATH
                   
                   subprocess.call(
                         ["ssh", "-i", f"{SSH_PRIVATE_KEY_FILE_PATH}", f"{SSH_USER}@{PUBLIC_IP}"]
@@ -129,7 +129,7 @@ class ConnectionEstabisher():
                         SSH_USER = self.terraform_outputs.VM_APP_SERVER_SSH_USER
                         PUBLIC_IP = self.terraform_outputs.VM_APP_SERVER_PUBLIC_IP
                         MYSQL_HOST = self.terraform_outputs.MYSQL_HOST
-                        SSH_PRIVATE_KEY_FILE_PATH = self.terraform_outputs.VM_SERVER_SSH_PRIVATE_KEY_FILE_PATH
+                        SSH_PRIVATE_KEY_FILE_PATH = self.terraform_outputs.VM_APP_SERVER_SSH_PRIVATE_KEY_FILE_PATH
                   
                   local_port_to_send_from = 3307
                   local_port_to_receive_from = 3306
