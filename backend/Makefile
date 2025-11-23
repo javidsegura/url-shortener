@@ -110,12 +110,22 @@ db-downgrade-specific-version:
 	$(VENV_ACTIVATE) && alembic downgrade $(MIGRATION_ID)
 
 
-push_docker: ## Pushed to docker 
+push_docker: ## Push Docker image with version tag
 	$(MAKE) check_enviroment_variables
+	@if [ -z "$(BACKEND_VERSION)" ]; then \
+		echo "ERROR: BACKEND_TAG variable is required. Usage: make push_docker BACKEND_TAG=v1.2.3"; \
+		exit 1; \
+	fi
 	docker login
-	docker buildx build -t javidsegura/url_shortener_backend:$(ENVIRONMENT) --platform linux/amd64,linux/arm64 --push -f ./Dockerfile ./
-
-
+	docker buildx build \
+		-t javidsegura/url_shortener_backend:$(ENVIRONMENT)-$(BACKEND_VERSION) \
+		-t javidsegura/url_shortener_backend:$(ENVIRONMENT) \
+		--platform linux/amd64,linux/arm64 \
+		--push \
+		-f ./Dockerfile ./
+	@echo "✓ Pushed images:"
+	@echo "  - javidsegura/url_shortener_backend:$(ENVIRONMENT)-$(BACKEND_VERSION)"
+	@echo "  - javidsegura/url_shortener_backend:$(ENVIRONMENT)"
 
 # 4) Tests
 pytest-run:
@@ -146,3 +156,4 @@ check_enviroment_variables:
 		exit 1; \
 	fi
 	echo "Environment is: $(ENVIRONMENT)"
+
