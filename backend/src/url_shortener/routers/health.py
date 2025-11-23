@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated, Dict
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from url_shortener.core.clients.utils.test_clients_connection import (
@@ -35,4 +35,4 @@ async def cheeck_backend_health_dependencies_endpoint(
 async def cheeck_backend_health_endpoint(
 	app_settings: Annotated[Settings, Depends(get_app_settings)],
 ) -> Dict:
-	return {"response": "pong"}
+	raise HTTPException(status_code=500)

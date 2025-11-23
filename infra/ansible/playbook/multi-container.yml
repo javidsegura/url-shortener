@@ -1,4 +1,4 @@
-- name: Docker compose launch
+- name: Docker compose launch with progressive rollout
   hosts: web_servers
   become: yes
 
@@ -8,16 +8,27 @@
     project_name: "url-shortener"
     src_backend_env_synced_path: "../../../backend/env_config/synced/.env.{{ stage_environment }}"
     dest_backend_env_synced_path: "{{ remote_project_path }}/backend/env_config/synced/.env.{{ stage_environment }}"
+    backend_image_tag: "production-{{ lookup('env', 'BACKEND_VERSION') | default('production', true) }}"
+    previous_tag_file: "{{ remote_project_path }}/.previous_backend_tag"
+    health_check_retries: 3
+    health_check_delay: 10
+    
   tasks:
   - name: Show resolved paths
     debug:
       msg: "Source path is {{ src_backend_env_synced_path }} and destination path is {{ dest_backend_env_synced_path }}"
+      
+  - name: Show deployment tag
+    debug:
+      msg: "Deploying backend image tag: {{ backend_image_tag }}"
+
   - name: Ensure Docker and dependencies are installed (APT)
     ansible.builtin.apt:
       name: 
         - docker.io
         - python3
         - python3-pip
+        - curl
       state: present
       update_cache: yes
     when: ansible_pkg_mgr == "apt"
@@ -28,6 +39,7 @@
         - docker
         - python3
         - python3-pip
+        - curl
       state: present
       update_cache: yes
     when: ansible_pkg_mgr == "dnf"
@@ -54,6 +66,7 @@
       owner: "{{ target_user }}"
       group: docker
       mode: "0755"
+      
   - name: Create frontend app directory
     ansible.builtin.file:
       path: "{{ remote_project_path }}/frontend/app"
@@ -61,6 +74,7 @@
       owner: "{{ target_user }}"
       group: docker
       mode: "0755"
+      
   - name: Create backend directory
     ansible.builtin.file:
       path: "{{ remote_project_path }}/backend"
@@ -68,6 +82,7 @@
       owner: "{{ target_user }}"
       group: docker
       mode: "0755"
+      
   - name: Create backend env_config directory structure
     ansible.builtin.file:
       path: "{{ remote_project_path }}/backend/env_config/synced"
@@ -103,7 +118,6 @@
       mode: "0644"
       directory_mode: "0755"
 
-  # Install Docker Compose V2 plugin
   - name: Create Docker CLI plugins directory
     ansible.builtin.file:
       path: /usr/local/lib/docker/cli-plugins
@@ -118,7 +132,6 @@
       owner: root
       group: root
 
-  # Install Python docker library for Ansible modules
   - name: Install python docker library
     ansible.builtin.pip:
       name: docker
@@ -126,13 +139,29 @@
       extra_args: "--user"
     become_user: "{{ target_user }}"
 
-  - name: Stop existing Docker Compose services
-    community.docker.docker_compose_v2:
-      project_src: "{{ remote_project_path }}/deployment"
-      project_name: "{{ project_name }}"
-      state: absent
-    
-  - name: Start and build Docker Compose Services
+  # Read previous tag for potential rollback
+  - name: Check if previous tag file exists
+    ansible.builtin.stat:
+      path: "{{ previous_tag_file }}"
+    register: previous_tag_stat
+
+  - name: Read previous backend tag
+    ansible.builtin.slurp:
+      src: "{{ previous_tag_file }}"
+    register: previous_tag_content
+    when: previous_tag_stat.stat.exists
+
+  - name: Set previous tag variable
+    set_fact:
+      previous_backend_tag: "{{ previous_tag_content.content | b64decode | trim }}"
+    when: previous_tag_stat.stat.exists
+
+  - name: Show previous tag
+    debug:
+      msg: "Previous backend tag: {{ previous_backend_tag | default('none') }}"
+
+  # Deploy new version
+  - name: Deploy new backend version
     community.docker.docker_compose_v2: 
       project_src: "{{ remote_project_path }}/deployment"
       files:
@@ -146,4 +175,68 @@
       ENVIRONMENT: "{{ stage_environment }}"
       BACKEND_ENV_FILE: "{{ dest_backend_env_synced_path }}"
       SERVER_PUBLIC_IP: "{{ ansible_default_ipv4.address | default(ansible_host) }}"
-    
+      BACKEND_IMAGE_TAG: "{{ backend_image_tag }}"
+
+  # Health check with retries
+  - name: Wait for backend health check
+    ansible.builtin.uri:
+      url: "http://{{ ansible_default_ipv4.address | default(ansible_host) }}:8000/api/health/ping"
+      method: GET
+      status_code: 200
+    register: health_check
+    retries: "{{ health_check_retries }}"
+    delay: "{{ health_check_delay }}"
+    until: health_check.status == 200
+    ignore_errors: yes
+
+  # Rollback if health check fails
+  - name: Rollback to previous version if health check failed
+    block:
+      - name: Show rollback message
+        debug:
+          msg: "Health check failed! Rolling back to {{ previous_backend_tag }}"
+
+      - name: Deploy previous backend version
+        community.docker.docker_compose_v2: 
+          project_src: "{{ remote_project_path }}/deployment"
+          files:
+            - docker-compose.yml
+            - docker-compose.{{stage_environment}}.yml
+          project_name: "{{ project_name }}"
+          state: present
+          pull: always 
+          recreate: always
+        environment:
+          ENVIRONMENT: "{{ stage_environment }}"
+          BACKEND_ENV_FILE: "{{ dest_backend_env_synced_path }}"
+          SERVER_PUBLIC_IP: "{{ ansible_default_ipv4.address | default(ansible_host) }}"
+          BACKEND_IMAGE_TAG: "{{ previous_backend_tag }}"
+
+      - name: Fail deployment
+        fail:
+          msg: "Deployment failed - rolled back to {{ previous_backend_tag }}"
+    when: 
+      - health_check.failed
+      - previous_tag_stat.stat.exists
+
+  - name: Fail if no previous version to rollback to
+    fail:
+      msg: "Health check failed and no previous version exists to rollback to"
+    when:
+      - health_check.failed
+      - not previous_tag_stat.stat.exists
+
+  # Save current tag as previous for next deployment
+  - name: Save current backend tag for future rollbacks
+    ansible.builtin.copy:
+      content: "{{ backend_image_tag }}"
+      dest: "{{ previous_tag_file }}"
+      owner: "{{ target_user }}"
+      group: docker
+      mode: "0644"
+    when: not health_check.failed
+
+  - name: Deployment successful
+    debug:
+      msg: "Backend {{ backend_image_tag }} deployed successfully!"
+    when: not health_check.failed
