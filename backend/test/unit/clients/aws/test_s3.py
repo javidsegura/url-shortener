@@ -4,32 +4,35 @@ import boto3
 from urllib.parse import urlparse, parse_qs
 import requests
 
-from url_shortener.services.infra.s3 import PresignedUrl, PresignedUrlActionsType
-from url_shortener.core.clients import s3_client
+from url_shortener.core.clients.aws import initialize_aws_s3_client
+from url_shortener.services.infra.storage.aws import AWSS3Storage, PresignedUrlActionsType
 
 
 @pytest.fixture
 def s3_setup():
     """Setup mock S3 environment"""
     bucket_name = "test-bucket"
-    s3_client.create_bucket(Bucket=bucket_name)
+    client = initialize_aws_s3_client()
+    client.create_bucket(Bucket=bucket_name)
     
-    yield bucket_name
+    yield bucket_name, client
 
 
 class TestPresignedUrlHealthyInput:
     
     def test_get_presigned_url_generation(self, s3_setup):
         """Test that GET presigned URL is generated correctly"""
-        bucket_name = s3_setup
-        presigned_url_service = PresignedUrl()
+        bucket_name, s3_client = s3_setup
+        presigned_url_service = AWSS3Storage(bucket_name)
         
         key = "test-file.txt"
         expiration = 1800
         
+        # Create object first for GET operation
+        s3_client.put_object(Bucket=bucket_name, Key=key, Body=b"test content")
+        
         url = presigned_url_service.get_presigned_url(
-            s3_bucket_name=bucket_name,
-            key=key,
+            file_path=key,
             expiration_time_secs=expiration
         )
         
@@ -46,14 +49,13 @@ class TestPresignedUrlHealthyInput:
     
     def test_put_presigned_url_generation(self, s3_setup):
         """Test that PUT presigned URL is generated correctly"""
-        bucket_name = s3_setup
-        presigned_url_service = PresignedUrl()
+        bucket_name, s3_client = s3_setup
+        presigned_url_service = AWSS3Storage(bucket_name)
         
         key = "upload-file.txt"
         
         url = presigned_url_service.put_presigned_url(
-            s3_bucket_name=bucket_name,
-            key=key
+            file_path=key
         )
         
         assert url is not None
@@ -67,15 +69,17 @@ class TestPresignedUrlHealthyInput:
     
     def test_presigned_url_with_custom_expiration(self, s3_setup):
         """Test presigned URL with custom expiration time"""
-        bucket_name = s3_setup
-        presigned_url_service = PresignedUrl()
+        bucket_name, s3_client = s3_setup
+        presigned_url_service = AWSS3Storage(bucket_name)
         
         key = "test-file.txt"
         custom_expiration_secs = 7200
         
+        # Create object first for GET operation
+        s3_client.put_object(Bucket=bucket_name, Key=key, Body=b"test content")
+        
         url = presigned_url_service.get_presigned_url(
-            s3_bucket_name=bucket_name,
-            key=key,
+            file_path=key,
             expiration_time_secs=custom_expiration_secs
         )
         
@@ -87,14 +91,16 @@ class TestPresignedUrlHealthyInput:
     
     def test_presigned_url_with_additional_params(self, s3_setup):
         """Test presigned URL with additional S3 parameters"""
-        bucket_name = s3_setup
-        presigned_url_service = PresignedUrl()
+        bucket_name, s3_client = s3_setup
+        presigned_url_service = AWSS3Storage(bucket_name)
         
         key = "test-file.txt"
         
+        # Create object first for GET operation
+        s3_client.put_object(Bucket=bucket_name, Key=key, Body=b"test content")
+        
         url = presigned_url_service.get_presigned_url(
-            s3_bucket_name=bucket_name,
-            key=key,
+            file_path=key,
             ResponseContentType="application/json",
             ResponseContentDisposition="attachment; filename=download.json"
         )
@@ -104,16 +110,15 @@ class TestPresignedUrlHealthyInput:
     
     def test_put_presigned_url_upload(self, s3_setup):
         """Test actual file upload using PUT presigned URL"""
-        bucket_name = s3_setup
-        presigned_url_service = PresignedUrl()
+        bucket_name, s3_client = s3_setup
+        presigned_url_service = AWSS3Storage(bucket_name)
         
         key = "uploaded-file.txt"
         content = b"Test file content"
         
         # Generate PUT presigned URL
         url = presigned_url_service.put_presigned_url(
-            s3_bucket_name=bucket_name,
-            key=key
+            file_path=key
         )
         
         # Upload file using the presigned URL
@@ -126,8 +131,8 @@ class TestPresignedUrlHealthyInput:
     
     def test_get_presigned_url_download(self, s3_setup):
         """Test actual file download using GET presigned URL"""
-        bucket_name = s3_setup
-        presigned_url_service = PresignedUrl()
+        bucket_name, s3_client = s3_setup
+        presigned_url_service = AWSS3Storage(bucket_name)
         
         key = "download-file.txt"
         content = b"Download me!"
@@ -137,8 +142,7 @@ class TestPresignedUrlHealthyInput:
         
         # Generate GET presigned URL
         url = presigned_url_service.get_presigned_url(
-            s3_bucket_name=bucket_name,
-            key=key
+            file_path=key
         )
         
         # Download file using the presigned URL
@@ -148,14 +152,16 @@ class TestPresignedUrlHealthyInput:
     
     def test_default_expiration(self, s3_setup):
         """Test that default expiration is 3600 seconds"""
-        bucket_name = s3_setup
-        presigned_url_service = PresignedUrl()
+        bucket_name, s3_client = s3_setup
+        presigned_url_service = AWSS3Storage(bucket_name)
         
         key = "test-file.txt"
         
+        # Create object first for GET operation
+        s3_client.put_object(Bucket=bucket_name, Key=key, Body=b"test content")
+        
         url = presigned_url_service.get_presigned_url(
-            s3_bucket_name=bucket_name,
-            key=key
+            file_path=key
         )
         
         parsed = urlparse(url)

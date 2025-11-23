@@ -49,9 +49,9 @@ class DevSettings(BaseSettings):
 
 	def extract_all_variables(self):
 		load_dotenv("./env_config/synced/.env.dev")
-		self._extract_database_variables()
 		self._extract_storage_variables()
 		self._extract_app_logic_variables()
+		self._extract_database_variables()
 		# self._extract_firebase_variables()
 
 	def _extract_database_variables(self):

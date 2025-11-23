@@ -30,8 +30,8 @@ async def lifespan(app: FastAPI):
 	initialize_firebase()
 	initialize_logger()
 	settings.app_settings = settings.initialize_settings()
-	clients.s3_client = clients.initialize_aws_s3_client()  # Update this
-	clients.secrets_manager_client = clients.initialize_aws_secrets_manager_client()
+	# clients.s3_client = clients.initialize_aws_s3_client()  # Update this
+	# clients.secrets_manager_client = clients.initialize_aws_secrets_manager_client()
 	clients.redis = clients.initialize_redis_client()
 
 	yield

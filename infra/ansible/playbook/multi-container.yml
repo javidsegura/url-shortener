@@ -76,17 +76,14 @@
       group: docker
       mode: "0755"
       
-  - name: Copy docker-compose files and dependencies to the root level
+  - name: Copy deployment directory structure
     ansible.builtin.copy:
-      src: "../../../{{ item }}"
-      dest: "{{ remote_project_path }}/{{ item }}"
+      src: "../../../deployment/"
+      dest: "{{ remote_project_path }}/deployment"
       owner: "{{ target_user }}"
       group: docker
       mode: "0644"
-    loop:
-      - docker-compose.yml
-      - docker-compose.{{ stage_environment }}.yml
-      - nginx.prod.conf
+      directory_mode: "0755"
       
   - name: Copy backend synced .env
     ansible.builtin.copy:
@@ -131,13 +128,13 @@
 
   - name: Stop existing Docker Compose services
     community.docker.docker_compose_v2:
-      project_src: "{{ remote_project_path }}"
+      project_src: "{{ remote_project_path }}/deployment"
       project_name: "{{ project_name }}"
       state: absent
     
   - name: Start and build Docker Compose Services
     community.docker.docker_compose_v2: 
-      project_src: "{{ remote_project_path }}"
+      project_src: "{{ remote_project_path }}/deployment"
       files:
         - docker-compose.yml
         - docker-compose.{{stage_environment}}.yml
@@ -148,4 +145,5 @@
     environment:
       ENVIRONMENT: "{{ stage_environment }}"
       BACKEND_ENV_FILE: "{{ dest_backend_env_synced_path }}"
+      SERVER_PUBLIC_IP: "{{ ansible_default_ipv4.address | default(ansible_host) }}"
     

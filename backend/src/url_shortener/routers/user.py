@@ -5,7 +5,7 @@ from typing import Annotated, Dict, List
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from url_shortener.services.storage.storage import StorageService
+from url_shortener.services.infra.storage import StorageService
 
 from url_shortener.core.clients import redis_client, s3_client
 from url_shortener.core.settings.app_settings import Settings

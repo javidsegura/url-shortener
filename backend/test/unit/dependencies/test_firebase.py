@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 from fastapi import HTTPException
 from firebase_admin import auth
 
-from url_shortener.dependencies import verify_user, is_user_admin 
+from url_shortener.dependencies import verify_user 
 
 def test_verify_user_success(mocker):
     # Mock the external dependencies
