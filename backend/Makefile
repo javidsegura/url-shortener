@@ -110,7 +110,7 @@ db-downgrade-specific-version:
 	$(VENV_ACTIVATE) && alembic downgrade $(MIGRATION_ID)
 
 
-push_docker: ## MOVE ME TO BAckend
+push_docker: ## Pushed to docker 
 	$(MAKE) check_enviroment_variables
 	docker login
 	docker buildx build -t javidsegura/url_shortener_backend:$(ENVIRONMENT) --platform linux/amd64,linux/arm64 --push -f ./Dockerfile ./
