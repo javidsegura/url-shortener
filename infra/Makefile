@@ -122,7 +122,7 @@ sync_backend_env: ## Inject tf outputs into backend dotenv
 sync_frontend_env:  ## Inject tf outputs into frontend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."
 	$(MAKE) check_enviroment_variables
-	mkdir -p ../frontend/env_config/synced
+	mkdir -p ../frontend/app/env_config/synced
 	$(PYTHON) -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
