@@ -2,8 +2,8 @@ name: CD - Deploy
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    # tags:
+    #   - 'v*.*.*'
 
 env:
   ENVIRONMENT: production

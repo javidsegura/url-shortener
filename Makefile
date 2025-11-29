@@ -1,6 +1,8 @@
 .PHONY: help dev install
 .DEFAULT_GOAL := help
 
+
+
 # VARIABLES
 # Colors for output
 RED = \033[31m
@@ -13,6 +15,7 @@ BACKEND_ENV_FILE_SYNCED_PATH = ../backend/env_config/synced/.env.$(ENVIRONMENT)
 FROTNEND_ENV_FILE_SYNCED_PATH = ../frontend/env_config/synced/.env.$(ENVIRONMENT)
 TERRAFORM_PATH = ./infra/terraform/environment/$(ENVIRONMENT)
 PROJECT_NAME = url-shortener
+
 
 
 help: ## Show this help message
@@ -75,18 +78,6 @@ dev-destroy-infra: ## Destroy terraform infra for development environmnet
 	$(MAKE) -C infra terraform-stop 
 
 # 3) Deployment environment
-# deploy-start: ## ups infra for prod and stagin
-# 	$(MAKE) check-enviroment-variables
-# 	$(MAKE) -C infra terraform-apply ENVIRONMENT=$(ENVIRONMENT)
-# 	$(MAKE) -C infra sync_all ENVIRONMENT=$(ENVIRONMENT)
-# 	$(MAKE) -C frontend build
-# 	$(MAKE) -C backend push_docker
-# 	$(MAKE) -C infra ansible-start
-# deploy-start-without-infra: ## up infra (faster), assumes infra is already up. 
-# 	$(MAKE) check-enviroment-variables
-# 	$(MAKE) -C frontend build
-# 	$(MAKE) -C backend push_docker
-# 	$(MAKE) -C infra ansible-start
 deploy-start: ## Deploy to production (no infra changes)
 	@echo "$(GREEN)Starting production deployment (app only)...$(RESET)"
 	$(MAKE) check-enviroment-variables

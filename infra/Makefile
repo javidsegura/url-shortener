@@ -1,5 +1,7 @@
 .PHONY: help install up down output extract-db-credentials
 
+SHELL := /bin/bash
+
 # Colors for output
 RED = \033[31m
 GREEN = \033[32m
