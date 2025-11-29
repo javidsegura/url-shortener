@@ -130,7 +130,6 @@ jobs:
         run: |
           # Create the directory if it doesn't exist
           mkdir -p backend/env_config/base/
-          mkdir -p frontend/env_config/base/
 
           # Create the file with mixed plain text and secrets
           cat <<EOF > backend/env_config/base/.env.production
@@ -143,6 +142,14 @@ jobs:
           CLOUD_PROVIDER="AZURE"
           AZURE_STORAGE_ACCOUNT_NAME="devshortenurl5mzn7gi4"
           AZURE_STORAGE_ACCOUNT_KEY="${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}"
+          EOF
+
+          # --- FRONTEND ---
+          mkdir -p frontend/app/env_config/base/
+
+          # Create a base frontend file
+          cat <<EOF > frontend/app/env_config/base/.env.production
+          ENVIRONMENT="production"
           EOF
         shell: bash
 
