@@ -157,3 +157,18 @@ check_enviroment_variables:
 	fi
 	echo "Environment is: $(ENVIRONMENT)"
 
+# 6) Docker
+push_docker: ## Push Docker image with version tag
+	$(MAKE) check_enviroment_variables
+	@if [ -z "$(BACKEND_VERSION)" ]; then \
+		echo "$(RED)ERROR: BACKEND_VERSION required$(RESET)"; \
+		echo "Usage: make push_docker BACKEND_VERSION=v1.0.0"; \
+		exit 1; \
+	fi
+	docker buildx build \
+		-t javidsegura/url_shortener_backend:$(ENVIRONMENT)-$(BACKEND_VERSION) \
+		-t javidsegura/url_shortener_backend:$(ENVIRONMENT) \
+		--platform linux/amd64,linux/arm64 \
+		--push \
+		-f ./Dockerfile ./
+	@echo "$(GREEN)✓ Pushed: $(ENVIRONMENT)-$(BACKEND_VERSION)$(RESET)"

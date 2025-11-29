@@ -1,174 +1,152 @@
-# name: CD - Deploy
+name: CD - Deploy
 
-# on:
-#   push:
-#     branches:
-#       - main
-#       - production
-#     paths:
-#       - 'backend/**'
-#       - 'frontend/**'
-#       - 'infra/**'
-#       - 'deployment/**'
-#       - '.github/workflows/cd-deploy.yml'
+on:
+  push:
+    tags:
+      - 'v*.*.*'
 
-# env:
-#   ENVIRONMENT: production
-#   CLOUD_PROVIDER: azure
+env:
+  ENVIRONMENT: production
+  CLOUD_PROVIDER: azure
 
-# jobs:
-#   detect-changes:
-#     runs-on: ubuntu-latest
-#     outputs:
-#       infra-changed: ${{ steps.changes.outputs.infra }}
-#       backend-changed: ${{ steps.changes.outputs.backend }}
-#       frontend-changed: ${{ steps.changes.outputs.frontend }}
-#     steps:
-#       - uses: actions/checkout@v4
-#         with:
-#           fetch-depth: 2
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      infra-changed: ${{ steps.detect.outputs.infra_changed }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       
-#       - name: Detect changes
-#         id: changes
-#         run: |
-#           if git diff --name-only HEAD~1 HEAD | grep -qE '^infra/'; then
-#             echo "infra=true" >> $GITHUB_OUTPUT
-#           else
-#             echo "infra=false" >> $GITHUB_OUTPUT
-#           fi
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      - name: Detect infrastructure changes
+        id: detect
+        run: |
+          TAG_COMMIT=$(git rev-list -n 1 ${{ steps.version.outputs.version }})
           
-#           if git diff --name-only HEAD~1 HEAD | grep -qE '^backend/'; then
-#             echo "backend=true" >> $GITHUB_OUTPUT
-#           else
-#             echo "backend=false" >> $GITHUB_OUTPUT
-#           fi
+          # Get list of tags
+          ALL_TAGS=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$')
           
-#           if git diff --name-only HEAD~1 HEAD | grep -qE '^frontend/'; then
-#             echo "frontend=true" >> $GITHUB_OUTPUT
-#           else
-#             echo "frontend=false" >> $GITHUB_OUTPUT
-#           fi
+          # Extract specifically the 2nd line (previous tag)
+          PREV_TAG=$(echo "$ALL_TAGS" | sed -n '2p')
+          
+          if [ -z "$PREV_TAG" ]; then
+            echo "First deployment detected (no previous tag). Forcing infra deploy."
+            echo "infra_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "Comparing against previous tag: $PREV_TAG"
+            if git diff --name-only $PREV_TAG $TAG_COMMIT | grep -qE '^infra/(terraform|ansible)/'; then
+              echo "Infrastructure changes detected"
+              echo "infra_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "No infrastructure changes"
+              echo "infra_changed=false" >> $GITHUB_OUTPUT
+            fi
+          fi
 
-#   deploy:
-#     runs-on: ubuntu-latest
-#     needs: detect-changes
-#     if: needs.detect-changes.outputs.infra-changed == 'true' || needs.detect-changes.outputs.backend-changed == 'true' || needs.detect-changes.outputs.frontend-changed == 'true'
+  deploy:
+    runs-on: ubuntu-latest
+    needs: check-changes
     
-#     steps:
-#       - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
       
-#       - name: Set up Python
-#         uses: actions/setup-python@v5
-#         with:
-#           python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
+      - name: Cache Python virtualenv
+        uses: actions/cache@v4
+        id: cache-venv
+        with:
+          path: |
+            .venv
+            backend/.venv
+            infra/.venv
+          key: venv-${{ runner.os }}-py3.11-${{ hashFiles('**/requirements*.txt', 'backend/pyproject.toml', 'infra/requirements.txt') }}
+          restore-keys: |
+            venv-${{ runner.os }}-py3.11-
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/app/package-lock.json'
       
-#       - name: Configure Azure credentials
-#         uses: azure/login@v2
-#         with:
-#           creds: ${{ secrets.AZURE_CREDENTIALS }}
-#           enable-AzPSSession: true
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.terraform.d/plugin-cache
+            infra/terraform/**/.terraform
+          key: terraform-${{ runner.os }}-${{ hashFiles('infra/terraform/**/.terraform.lock.hcl') }}
+          restore-keys: |
+            terraform-${{ runner.os }}-
       
-#       - name: Set Azure subscription
-#         run: |
-#           az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-#           az account show
+      - name: Cache Ansible Galaxy collections
+        uses: actions/cache@v4
+        with:
+          path: ~/.ansible/collections
+          key: ansible-${{ runner.os }}-${{ hashFiles('infra/ansible/dependencies.yml') }}
+          restore-keys: |
+            ansible-${{ runner.os }}-
       
-#       - name: Install system dependencies
-#         run: |
-#           sudo apt-get update
-#           sudo apt-get install -y make jq
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.6.0'
+          terraform_wrapper: false
       
-#       - name: Install Terraform
-#         uses: hashicorp/setup-terraform@v3
-#         with:
-#           terraform_version: '1.6.0'
+      - name: Configure Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       
-#       - name: Install Ansible
-#         run: |
-#           sudo apt-get update
-#           sudo apt-get install -y ansible
+      - name: Set Azure subscription
+        run: az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
-#       - name: Install infra dependencies
-#         working-directory: ./infra
-#         run: |
-#           python3.11 -m venv .venv
-#           source .venv/bin/activate
-#           pip3 install -r ./requirements.txt
-#           pip install boto3 botocore
-#           ansible-galaxy install -r ./ansible/dependencies.yml
-#         env:
-#           ENVIRONMENT: ${{ env.ENVIRONMENT }}
-#           CLOUD_PROVIDER: ${{ env.CLOUD_PROVIDER }}
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
       
-#       - name: Install backend dependencies
-#         working-directory: ./backend
-#         run: make install
-#         env:
-#           ENVIRONMENT: ${{ env.ENVIRONMENT }}
-      
-#       - name: Install frontend dependencies
-#         working-directory: ./frontend
-#         run: make install
-#         env:
-#           ENVIRONMENT: ${{ env.ENVIRONMENT }}
-      
-#       - name: Configure Docker Buildx
-#         uses: docker/setup-buildx-action@v3
-      
-#       - name: Login to Docker Hub
-#         uses: docker/login-action@v3
-#         with:
-#           username: ${{ secrets.DOCKER_USERNAME }}
-#           password: ${{ secrets.DOCKER_PASSWORD }}
-      
-#       - name: Deploy with infrastructure
-#         if: needs.detect-changes.outputs.infra-changed == 'true'
-#         run: make deploy-start
-#         env:
-#           ENVIRONMENT: ${{ env.ENVIRONMENT }}
-#           CLOUD_PROVIDER: ${{ env.CLOUD_PROVIDER }}
-      
-#       - name: Initialize Terraform (for sync without infra changes)
-#         if: needs.detect-changes.outputs.infra-changed == 'false'
-#         working-directory: ./infra
-#         run: |
-#           source .venv/bin/activate
-#           cd terraform/${{ env.CLOUD_PROVIDER }}/environment/${{ env.ENVIRONMENT }} && terraform init
-#         env:
-#           ENVIRONMENT: ${{ env.ENVIRONMENT }}
-#           CLOUD_PROVIDER: ${{ env.CLOUD_PROVIDER }}
-      
-#       - name: Sync environment files (without infra changes)
-#         if: needs.detect-changes.outputs.infra-changed == 'false'
-#         working-directory: ./infra
-#         run: |
-#           source .venv/bin/activate
-#           make sync_all
-#         env:
-#           ENVIRONMENT: ${{ env.ENVIRONMENT }}
-#           CLOUD_PROVIDER: ${{ env.CLOUD_PROVIDER }}
-      
-#       - name: Deploy without infrastructure
-#         if: needs.detect-changes.outputs.infra-changed == 'false'
-#         run: make deploy-start-without-infra
-#         env:
-#           ENVIRONMENT: ${{ env.ENVIRONMENT }}
-#           CLOUD_PROVIDER: ${{ env.CLOUD_PROVIDER }}
-      
-#       - name: Verify deployment files exist
-#         run: |
-#           if [ ! -f "./backend/env_config/synced/.env.${{ env.ENVIRONMENT }}" ]; then
-#             echo "Error: Backend env file not found"
-#             exit 1
-#           fi
-#           if [ ! -f "./infra/ansible/inventory/${{ env.ENVIRONMENT }}.ini" ]; then
-#             echo "Error: Ansible inventory file not found"
-#             exit 1
-#           fi
-#           echo "✅ All required deployment files exist"
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Install dependencies # CAN WE ADD CACHING HERE?
+        run: make install-ci-cd
+        env:
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
+          CLOUD_PROVIDER: ${{ env.CLOUD_PROVIDER }}
+      
+      - name: Deploy with infrastructure
+        if: needs.check-changes.outputs.infra-changed == 'true'
+        run: make deploy-prod-with-infra
+        env:
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
+          CLOUD_PROVIDER: ${{ env.CLOUD_PROVIDER }}
+          BACKEND_VERSION: ${{ needs.check-changes.outputs.version }}
+      
+      - name: Deploy without infrastructure
+        if: needs.check-changes.outputs.infra-changed == 'false'
+        run: make deploy-start
+        env:
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
+          CLOUD_PROVIDER: ${{ env.CLOUD_PROVIDER }}
+          BACKEND_VERSION: ${{ needs.check-changes.outputs.version }}
+      
+      - name: Deployment summary
+        run: |
+          echo "## 🚀 Production Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ needs.check-changes.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Infrastructure Updated**: ${{ needs.check-changes.outputs.infra-changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Deployment complete!" >> $GITHUB_STEP_SUMMARY

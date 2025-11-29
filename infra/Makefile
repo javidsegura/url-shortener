@@ -46,6 +46,14 @@ install: ## Initialize Terraform
 	$(VENV_ACTIVATE) && pip install boto3 botocore
 	$(VENV_ACTIVATE) && ansible-galaxy install -r ./ansible/dependencies.yml
 
+install-ci-cd:
+	python3.11 -m venv $(VENV)
+	$(VENV_ACTIVATE) && pip3 install -r ./requirements.txt
+	$(MAKE) check_enviroment_variables
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform init
+	$(VENV_ACTIVATE) && pip install boto3 botocore
+	$(VENV_ACTIVATE) && ansible-galaxy install -r ./ansible/dependencies.yml
+
 
 
 check: ## Apply Terraform configuration

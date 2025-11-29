@@ -178,9 +178,9 @@
       BACKEND_IMAGE_TAG: "{{ backend_image_tag }}"
 
   # Health check with retries
-  - name: Wait for backend health check
+  - name: Wait for backend dependency health check
     ansible.builtin.uri:
-      url: "http://{{ ansible_default_ipv4.address | default(ansible_host) }}:8000/api/health/ping"
+      url: "http://{{ ansible_default_ipv4.address | default(ansible_host) }}:8000/api/health/dependencies"
       method: GET
       status_code: 200
     register: health_check

@@ -17,7 +17,7 @@ services:
       ports:
         - "8000:8000"
       healthcheck: 
-        test: ["CMD", "curl", "-f", "http://${SERVER_PUBLIC_IP}:8000/api/health/ping"]
+        test: ["CMD", "curl", "-f", "http://${SERVER_PUBLIC_IP}:8000/api/health/dependencies"]
         interval: 30s
         timeout: 5s
         retries: 5
