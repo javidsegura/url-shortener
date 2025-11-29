@@ -113,6 +113,7 @@ terraform-fmt-all: ## Format all Terraform files (for pre-commit, no credentials
 sync_backend_env: ## Inject tf outputs into backend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."
 	$(MAKE) check_enviroment_variables
+	mkdir -p ../backend/env_config/synced
 	$(PYTHON) -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
@@ -121,6 +122,7 @@ sync_backend_env: ## Inject tf outputs into backend dotenv
 sync_frontend_env:  ## Inject tf outputs into frontend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."
 	$(MAKE) check_enviroment_variables
+	mkdir -p ../backend/env_config/synced  # <--- ADD THIS
 	$(PYTHON) -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
