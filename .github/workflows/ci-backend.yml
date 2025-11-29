@@ -244,7 +244,7 @@ jobs:
           ENVIRONMENT: test
         run: make test-stop
 
-load-tests:
+  load-tests:
     runs-on: ubuntu-latest
     needs: [unit-tests, smoke-tests]
     if: github.event_name == 'pull_request' && github.base_ref == 'main'
