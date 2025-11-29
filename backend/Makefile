@@ -43,7 +43,7 @@ install-full: ## Install backend dependices for client + dev usage
 
 # 1) Boot-up
 dev: ## Start backend development server
-	$(VENV_ACTIVATE) &&  ENVIRONMENT=dev uvicorn $(APP_PATH) --reload --host 0.0.0.0 --port $(PORT)
+	$(VENV_ACTIVATE) &&  ENVIRONMENT=$(ENVIRONMENT) uvicorn $(APP_PATH) --reload --host 0.0.0.0 --port $(PORT)
 
 
 
@@ -143,11 +143,10 @@ smoke-test: ## Run all smoke endpoint tests
 
 load-tests: ## Run load tests with k6
 	@echo "$(YELLOW)Running load tests...$(RESET)"
-	$(MAKE) test-start
-	k6 run test/load/load_test.js
+	k6 run --out json=test/load/k6-results.json test/load/load_test.js
 
 # 5) Miscellaneous
-check_enviroment_variables:
+check-environment-variables:
 	@if [ -z "$$ENVIRONMENT" ]; then \
 		echo "Error: ENVIRONMENT must be defined"; \
 		exit 1; \
@@ -156,7 +155,7 @@ check_enviroment_variables:
 
 # 6) Docker
 push_docker: ## Push Docker image with version tag
-	$(MAKE) check_enviroment_variables
+	$(MAKE) check-environment-variables
 	@if [ -z "$(BACKEND_VERSION)" ]; then \
 		echo "$(RED)ERROR: BACKEND_VERSION required$(RESET)"; \
 		echo "Usage: make push_docker BACKEND_VERSION=v1.0.0"; \

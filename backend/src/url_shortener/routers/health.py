@@ -32,11 +32,21 @@ async def cheeck_backend_health_dependencies_endpoint(
 	try:
 		redis_connected = await test_redis_connection()
 		if not redis_connected:
-			raise Exception()
+			raise Exception("Redis connection failed")
 		checks["checks"]["redis"] = "ok"
 	except Exception as e:
 		checks["status"] = "unhealthy"
 		checks["checks"]["redis"] = f"failed: {e}"
+
+	# Database
+	try:
+		db_connected = await test_db_connection(db=db)
+		if not db_connected:
+			raise Exception("Database connection failed")
+		checks["checks"]["db"] = "ok"
+	except Exception as e:
+		checks["status"] = "unhealthy"
+		checks["checks"]["db"] = f"failed: {e}"
 
 	if checks["status"] == "unhealthy":
 		raise HTTPException(

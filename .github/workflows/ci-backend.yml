@@ -247,7 +247,6 @@ jobs:
   load-tests:
     runs-on: ubuntu-latest
     needs: [unit-tests, smoke-tests]
-    # CONDITION: Only run on PRs merging into main
     if: github.event_name == 'pull_request' && github.base_ref == 'main'
     defaults:
       run:
@@ -256,7 +255,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # FIX 1: Updated k6 installation command with correct Key ID (ending in 1D69)
+      #
       - name: Install k6
         run: |
           sudo gpg -k
@@ -279,8 +278,6 @@ jobs:
       - name: Install dependencies
         run: make install
 
-      # FIX 2: Create the .env.test file explicitly.
-      # This is required for 'make load-tests' (which starts the app) and 'make test-stop' (which reads the file).
       - name: Create Test Environment Config
         run: |
           mkdir -p env_config/synced
@@ -305,17 +302,33 @@ jobs:
           AZURE_STORAGE_CONTAINER_NAME="images"
           EOF
 
+      # -----------------------------------------------------------
+      # ONE CLEAN STEP: Dependencies -> Server -> Tests -> Cleanup
+      # -----------------------------------------------------------
       - name: Run Load Tests
         env:
           ENVIRONMENT: test
-        # This make target handles 'test-start' and 'k6 run'
-        run: make load-tests
+        run: |
+          # 1. Start Database & Redis
+          make test-start
+
+          # 2. Start the Backend Server (Backgrounded with &)
+          # We use your existing 'make dev' command!
+          make dev &
+
+          # 3. Wait for server to boot (simple sleep is less "weird" than loops)
+          echo "Waiting 10s for server to boot..."
+          sleep 10
+
+          # 4. Run K6
+          make load-tests
+
+      # -----------------------------------------------------------
 
       - name: Stop Docker Environment
         if: always()
         env:
           ENVIRONMENT: test
-        # This will now succeed because the .env file exists
         run: make test-stop
 
       - name: Upload K6 Results
