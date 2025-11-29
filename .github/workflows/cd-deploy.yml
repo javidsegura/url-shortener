@@ -125,6 +125,10 @@ jobs:
         env:
           ENVIRONMENT: ${{ env.ENVIRONMENT }}
           CLOUD_PROVIDER: ${{ env.CLOUD_PROVIDER }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       
       - name: Deploy with infrastructure
         if: needs.check-changes.outputs.infra-changed == 'true'
