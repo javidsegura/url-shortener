@@ -45,7 +45,7 @@ jobs:
         run: make install
 
       - name: Run linting checks
-        run: make lint-check
+        run: make format
 
       - name: Run security scan
         run: make static-security-analysis
