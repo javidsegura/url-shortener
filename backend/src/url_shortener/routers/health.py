@@ -61,4 +61,4 @@ async def cheeck_backend_health_dependencies_endpoint(
 async def cheeck_backend_health_endpoint(
 	app_settings: Annotated[Settings, Depends(get_app_settings)],
 ) -> Dict:
-	return {"response": "pong (1ST DEPLOYMENT)"}
+	return {"response": "pong (2ND DEPLOYMENT) -- IM FINALLY WORKING"}
