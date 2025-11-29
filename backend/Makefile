@@ -117,7 +117,7 @@ db-downgrade-specific-version:
 # 4.1 ) Tests set-up
 # 4) Tests set-up
 test-start: ## Stats docker compose for integration tests of endpoints
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../deployment/docker-compose.yml -f ../deployment/docker-compose.test.yml -p $(PROJECT_NAME) up --build -d
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../deployment/docker-compose.yml -f ../deployment/docker-compose.test.yml -p $(PROJECT_NAME) up --build -d --wait
 
 test-stop: ## Stops docker compose for integration tests of endpoints
 	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../deployment/docker-compose.yml -f ../deployment/docker-compose.test.yml -p $(PROJECT_NAME) down -v

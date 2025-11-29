@@ -303,46 +303,14 @@ jobs:
           AZURE_STORAGE_CONTAINER_NAME="images"
           EOF
 
-      # --- [PHASE 1: INFRASTRUCTURE] ---
-      - name: 1. Start Database & Redis
+      - name: Start Full Stack (DB + Backend)
         env:
           ENVIRONMENT: test
         run: make test-start
 
-      # --- [PHASE 2: APPLICATION STARTUP] ---
-      - name: 2. Start Backend & Wait for Health
-        env:
-          ENVIRONMENT: test
-        run: |
-          # Start the server in the background using your Make command
-          # Redirect stdout/stderr to a file so we can debug if it crashes
-          make dev > server.log 2>&1 &
-
-          echo "Backend started in background. Waiting for health check..."
-
-          # Loop for 30 seconds checking if the server answers
-          # If this fails, the step fails, and we move to the 'Debug' step
-          timeout 30s bash -c 'until curl -s --fail http://localhost:8000/api/health/ping; do sleep 2; echo "Retrying health check..."; done'
-
-          echo "Backend is HEALTHY and READY!"
-
-      # --- [PHASE 3: DEBUGGING (Run only on failure)] ---
-      # If Step 2 failed (timeout or crash), this prints the Python error logs
-      - name: 🔍 Debug Server Failure
-        if: failure()
-        run: |
-          echo "=== SERVER STARTUP LOGS ==="
-          cat server.log
-          echo "==========================="
-
-      # --- [PHASE 4: LOAD TEST] ---
-      # This only runs if Step 2 succeeded
-      - name: 3. Run Load Tests
-        env:
-          ENVIRONMENT: test
+      - name: Run Load Tests
         run: make load-tests
 
-      # --- [CLEANUP] ---
       - name: Stop Docker Environment
         if: always()
         env:
