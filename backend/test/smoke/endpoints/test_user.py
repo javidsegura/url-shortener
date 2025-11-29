@@ -8,8 +8,8 @@ import requests
 logger = logging.getLogger(__name__)
 
 class TestUserEndpoint():
-      def test_user_getting_presinged_profile_pic(self, 
-            fastapi_client: TestClient, 
+      def test_user_getting_presinged_profile_pic(self,
+            fastapi_client: TestClient,
             start_docker_compose_services):
             response = fastapi_client.get(
                   url="/api/user/12345"

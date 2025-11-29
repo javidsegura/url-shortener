@@ -49,7 +49,7 @@ install-ci-cd: ## Install dependencies for CI environment (no brew)
 # 2) Dev environment
 dev-start: ## Hot reload enabled for both backend and frontend
 	$(MAKE) check-enviroment-variables
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f deployment/docker-compose.yml -f deployment/docker-compose.dev.yml -p $(PROJECT_NAME) up --build 
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f deployment/docker-compose.yml -f deployment/docker-compose.dev.yml -p $(PROJECT_NAME) up --build
 
 dev-stop: ## Stop development environment
 	$(MAKE) check-enviroment-variables
@@ -58,7 +58,7 @@ dev-stop: ## Stop development environment
 	pkill -f "uvicorn" || true
 	pkill -f "vite" || true
 	pkill -f "npm run dev" || true
-	
+
 dev-restart-docker-compose: ## Restart docker compose for dev
 	@echo "Restarting docker compose"
 	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH)  docker compose -f deployment/docker-compose.yml -f deployment/docker-compose.dev.yml -p $(PROJECT_NAME) down -v
@@ -66,7 +66,7 @@ dev-restart-docker-compose: ## Restart docker compose for dev
 	pkill -f "vite" || true
 	pkill -f "npm run dev" || true
 	docker volume prune -f
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f deployment/docker-compose.yml -f deployment/docker-compose.dev.yml -p $(PROJECT_NAME) up --build 
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f deployment/docker-compose.yml -f deployment/docker-compose.dev.yml -p $(PROJECT_NAME) up --build
 
 dev-start-infra: ## Deploy terraform infra for development environmnet
 	$(MAKE) -C infra terraform-apply
@@ -75,36 +75,43 @@ dev-start-infra: ## Deploy terraform infra for development environmnet
 dev-destroy-infra: ## Destroy terraform infra for development environmnet
 	$(MAKE) check-enviroment-variables
 	@echo "$(YELLOW)Stopping development environment...$(RESET)"
-	$(MAKE) -C infra terraform-stop 
+	$(MAKE) -C infra terraform-stop
 
 # 3) Deployment environment
 deploy-start: ## Deploy to production (no infra changes)
 	@echo "$(GREEN)Starting production deployment (app only)...$(RESET)"
 	$(MAKE) check-enviroment-variables
 	$(MAKE) check-backend-version
-	$(MAKE) -C infra sync_all 
-	$(MAKE) -C frontend build 
-	$(MAKE) -C backend push_docker 
+	$(MAKE) -C infra sync_all
+	$(MAKE) -C frontend build
+	$(MAKE) -C backend push_docker
 	$(MAKE) -C infra ansible-start
 	@echo "$(GREEN)✅ Deployment complete - version $(BACKEND_VERSION)$(RESET)"
 deploy-start-with-infra: ## Deploy to production (with infra changes)
 	@echo "$(GREEN)Starting production deployment (infra + app)...$(RESET)"
 	$(MAKE) check-enviroment-variables
 	$(MAKE) check-backend-version
-	$(MAKE) -C infra terraform-apply 
-	$(MAKE) -C infra sync_all 
-	$(MAKE) -C frontend build 
-	$(MAKE) -C backend push_docker 
-	$(MAKE) -C infra ansible-start 
+	$(MAKE) -C infra terraform-apply
+	$(MAKE) -C infra sync_all
+	$(MAKE) -C frontend build
+	$(MAKE) -C backend push_docker
+	$(MAKE) -C infra ansible-start
 	@echo "$(GREEN)✅ Deployment complete with infra - version $(BACKEND_VERSION)$(RESET)"
 
 deploy-stop: ## Stop development environment
 	@echo "$(YELLOW)Stopping development environment...$(RESET)"
 	$(MAKE) check-enviroment-variables
-	$(MAKE) -C infra terraform-stop ENVIRONMENT="$(ENVIRONMENT)" 
+	$(MAKE) -C infra terraform-stop ENVIRONMENT="$(ENVIRONMENT)"
 	$(MAKE) delete_ci_artifacts
 
-# 4) Uitls function
+# 4) Tests set-up
+test-start: ## Stats docker compose for integration tests of endpoints
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f deployment/docker-compose.yml -f deployment/docker-compose.test.yml -p $(PROJECT_NAME) up --build
+
+test-stop: ## Stops docker compose for integration tests of endpoints
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f deployment/docker-compose.yml -f deployment/docker-compose.test.yml -p $(PROJECT_NAME) down -v
+
+# 5) Uitls function
 delete_ci_artifacts:
 	rm -rf $(BACKEND_ENV_FILE_SYNCED_PATH)
 	rm -rf $(FROTNEND_ENV_FILE_SYNCED_PATH)

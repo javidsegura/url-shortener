@@ -3,7 +3,7 @@ services:
     image: mysql:8.0
     tmpfs:
       - /var/lib/mysql
-    ports: 
+    ports:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "rootpassword"
@@ -22,13 +22,13 @@ services:
       depends_on:
         database:
           condition: service_healthy
-  firebase-emulator:
-    image: evolutecx/firebase-emulator:latest
-    ports:
-      - 14000:4000 #Emulator UI
-      - 19099:9099 #Firebase Auth
-    environment:
-      - FB_PROJECT_ID=url-shortener-abadb
+  # firebase-emulator:
+  #   image: evolutecx/firebase-emulator:latest
+  #   ports:
+  #     - 14000:4000 #Emulator UI
+  #     - 19099:9099 #Firebase Auth
+  #   environment:
+  #     - FB_PROJECT_ID=url-shortener-abadb
   nginx:
     volumes:
       - ./reverse-proxy-config/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
@@ -37,8 +37,7 @@ services:
         condition: service_started
       database:
         condition: service_started
-      firebase-emulator:
-        condition: service_started
+      # firebase-emulator:
+      #   condition: service_started
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost/nginx-health"]
-      
