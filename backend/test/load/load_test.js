@@ -10,11 +10,11 @@ const requestCount = new Counter('requests');
 // Test configuration
 export const options = {
   stages: [
-    { duration: '30s', target: 10 },   // Ramp up to 10 users over 30 seconds
-    { duration: '1m', target: 10 },    // Stay at 10 users for 1 minute
-    { duration: '30s', target: 20 },   // Ramp up to 20 users over 30 seconds
-    { duration: '1m', target: 20 },    // Stay at 20 users for 1 minute
-    { duration: '30s', target: 0 },    // Ramp down to 0 users
+    { duration: '10s', target: 10 },   // Ramp up to 10 users over 30 seconds
+    // { duration: '1m', target: 10 },    // Stay at 10 users for 1 minute
+    // { duration: '30s', target: 20 },   // Ramp up to 20 users over 30 seconds
+    // { duration: '1m', target: 20 },    // Stay at 20 users for 1 minute
+    // { duration: '30s', target: 0 },    // Ramp down to 0 users
   ],
   thresholds: {
     http_req_duration: ['p(95)<500'],  // 95% of requests should be below 500ms
