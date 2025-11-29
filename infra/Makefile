@@ -132,6 +132,7 @@ sync_frontend_env:  ## Inject tf outputs into frontend dotenv
 sync_ansible_inventory: ## ## Inject tf outputs into ansible
 	@echo "Syncing Terraform outputs to Ansible inventory..."
 	$(MAKE) check_enviroment_variables
+	mkdir -p ansible/inventory
 	$(PYTHON) -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
