@@ -131,7 +131,7 @@ unit-test: ## Run all unit tests with coverage
 	$(VENV_ACTIVATE) && python3 -m pytest test/unit/ -v --cov=src/url_shortener --cov-report=term --cov-fail-under=70
 
 integration-test: ## Runn all integration tests
-	$(VENV_ACTIVATE) && python3 -m pytest -s -vv test/integration/endpoints
+	$(VENV_ACTIVATE) && python3 -m pytest -s -vv test/integration/
 
 regression-test: ## Run all regression tests
 	@echo "$(YELLOW)Running regression tests...$(RESET)"
@@ -139,7 +139,7 @@ regression-test: ## Run all regression tests
 
 smoke-test: ## Run all smoke endpoint tests
 	@echo "$(YELLOW)Running smoke endpoint tests...$(RESET)"
-	$(VENV_ACTIVATE) && python3 -m pytest test/smoke/endpoints/ -v
+	$(VENV_ACTIVATE) && python3 -m pytest test/smoke/ -v
 
 load-tests: ## Run load tests with k6
 	@echo "$(YELLOW)Running load tests...$(RESET)"
