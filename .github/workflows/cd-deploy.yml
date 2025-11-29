@@ -2,8 +2,8 @@ name: CD - Deploy
 
 on:
   push:
-    # tags:
-    #   - 'v*.*.*'
+    tags:
+      - 'v*.*.*'
 
 env:
   ENVIRONMENT: production
@@ -185,6 +185,7 @@ jobs:
           CLOUD_PROVIDER: ${{ env.CLOUD_PROVIDER }}
           BACKEND_VERSION: ${{ needs.check-changes.outputs.version }}
           TERRAFORM_OUTPUTS_JSON: ${{ secrets.TERRAFORM_OUTPUTS_JSON }}
+          SSH_PRIVATE_KEY_PATH: ~/.ssh/ssh_key.pem
 
       - name: Deployment summary
         run: |
