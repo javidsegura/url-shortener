@@ -196,6 +196,19 @@
         debug:
           msg: "Health check failed! Rolling back to {{ previous_backend_tag }}"
 
+      - name: Get ID of the crashed container
+        shell: docker ps -a -q -l
+        register: crashed_container_id
+
+      - name: Get Docker logs of failed container
+        shell: "docker logs {{ crashed_container_id.stdout }}"
+        register: docker_logs
+        ignore_errors: yes
+
+      - name: Print Docker logs
+        debug:
+          var: docker_logs.stdout_lines
+
       - name: Deploy previous backend version
         community.docker.docker_compose_v2:
           project_src: "{{ remote_project_path }}/deployment"
