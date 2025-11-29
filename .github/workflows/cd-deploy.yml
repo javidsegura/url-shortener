@@ -130,6 +130,7 @@ jobs:
         run: |
           # Create the directory if it doesn't exist
           mkdir -p backend/env_config/base/
+          mkdir -p frontend/env_config/base/
 
           # Create the file with mixed plain text and secrets
           cat <<EOF > backend/env_config/base/.env.production
