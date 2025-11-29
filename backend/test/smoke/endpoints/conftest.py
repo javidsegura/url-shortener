@@ -77,7 +77,7 @@ def start_docker_compose_services():
         print("⏳ Waiting for database migrations to complete...")
         try:
             result = subprocess.run(
-                ["docker", "wait", "url-shortener-db-migration-1"], # NOTES: write about the possible conditions that come after running in detach mode
+                ["docker", "wait", "url-shortener-db-migration-1"],
                 check=True,
                 capture_output=True,
                 text=True,

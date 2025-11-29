@@ -28,12 +28,12 @@ help: ## Show this help message
 
 # 0) Set-up
 install: ## Install backend dependencies
-	python3.11 -m venv $(VENV)
-	$(VENV_ACTIVATE) && pip3 install -e "."
+	uv venv $(VENV) --python 3.11
+	uv pip install -e ".[dev,tests]"
 	$(VENV_ACTIVATE) && alembic init migrations || echo "alembic init already started"
 install-full: ## Install backend dependices for client + dev usage
-	python3.11 -m venv $(VENV)
-	$(VENV_ACTIVATE) && pip3 install -e ".[dev, tests]"
+	uv venv $(VENV) --python 3.11
+	uv pip install -e ".[dev,tests]"
 	$(VENV_ACTIVATE) && alembic init migrations || echo "alembic init already started"
 	@if command -v brew >/dev/null 2>&1; then \
 		brew install k6 || echo "Note: k6 installation skipped (may already be installed)"; \
@@ -117,18 +117,18 @@ db-downgrade-specific-version:
 # 4.1 ) Tests set-up
 # 4) Tests set-up
 test-start: ## Stats docker compose for integration tests of endpoints
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../deployment/docker-compose.yml -f ../deployment/docker-compose.test.yml -p $(PROJECT_NAME) up --build
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../deployment/docker-compose.yml -f ../deployment/docker-compose.test.yml -p $(PROJECT_NAME) up --build -d
 
 test-stop: ## Stops docker compose for integration tests of endpoints
 	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../deployment/docker-compose.yml -f ../deployment/docker-compose.test.yml -p $(PROJECT_NAME) down -v
 # 4.2) Tests run
 pytest-run:
 	$(VENV_ACTIVATE) && pytest -s -vv \
-					test/integration/
+					test/smoke/endpoints
 
 unit-test: ## Run all unit tests with coverage
 	@echo "$(YELLOW)Running all tests...$(RESET)"
-	$(VENV_ACTIVATE) && python3 -m pytest test/unit/ -v --cov=src/url_shortener --cov-report=term
+	$(VENV_ACTIVATE) && python3 -m pytest test/unit/ -v --cov=src/url_shortener --cov-report=term --cov-fail-under=70
 
 integration-test: ## Runn all integration tests
 	$(VENV_ACTIVATE) && python3 -m pytest -s -vv test/integration/endpoints

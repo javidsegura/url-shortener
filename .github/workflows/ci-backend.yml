@@ -14,7 +14,7 @@ on:
       - 'backend/**'
 
 jobs:
-  lint-and-security: # DEBUG: gotta add linter too (currently just formatter)
+  lint-and-security:
     runs-on: ubuntu-latest
 
     steps:

@@ -37,7 +37,7 @@ services:
         condition: service_started
       database:
         condition: service_started
-      # firebase-emulator:
-      #   condition: service_started
+      #firebase-emulator:
+      # condition: service_started
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost/nginx-health"]
