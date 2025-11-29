@@ -308,6 +308,10 @@ jobs:
           ENVIRONMENT: test
         run: make test-start
 
+      - name: Verify Backend Health
+        run: |
+          timeout 30s bash -c 'until curl -s --fail http://localhost:8000/api/health/ping; do sleep 2; done'
+
       - name: Run Load Tests
         run: make load-tests
 
