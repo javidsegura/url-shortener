@@ -7,8 +7,8 @@ from url_shortener.core.settings import initialize_settings
 @pytest.fixture(scope="function")
 def get_mock_redis_client():
     REDIS_CLIENT_PATH = "url_shortener.core.clients.redis.RedisClientConnector.get_client"
-    
-    
+
+
     mock_redis_instance = AsyncMock()
     mock_redis_instance.set = AsyncMock()
     mock_redis_instance.get = AsyncMock(return_value="http://www.faker.com")
@@ -19,11 +19,7 @@ def get_mock_redis_client():
     # Patch the initialize_redis_client function
     with patch(REDIS_CLIENT_PATH, return_value=mock_redis_instance) as mock_initializer:
         yield mock_redis_instance
-    
 
-
-
-# LOADING/UNLOADING CONFIG (i.e., Environmental variables)
 def pytest_configure(config):
       """Mock all required environment variables for tests."""
 
@@ -45,6 +41,9 @@ def pytest_configure(config):
             "AWS_SECURITY_TOKEN": "testing",
             "AWS_SESSION_TOKEN": "testing",
             "AWS_DEFAULT_REGION": "us-east-1",
+            "AZURE_STORAGE_ACCOUNT_NAME": "test_storage_acc",
+            "AZURE_STORAGE_ACCOUNT_KEY": "test_storage_acc_key",
+            "AZURE_STORAGE_CONTAINER_NAME": "test_images_container",
       }
       for key, value in test_env.items():
             os.environ[key] = value
@@ -75,9 +74,14 @@ def pytest_unconfigure(config):
             "AWS_SECURITY_TOKEN": "testing",
             "AWS_SESSION_TOKEN": "testing",
             "AWS_DEFAULT_REGION": "us-east-1",
+                        "AZURE_STORAGE_ACCOUNT_NAME": "test_storage_acc",
+            "AZURE_STORAGE_ACCOUNT_KEY": "test_storage_acc_key",
+            "AZURE_STORAGE_CONTAINER_NAME": "test_images_container",
       }
       for key in test_env.keys():
-                  del os.environ[key]
+                  # Safely delete the environment variable
+                  if key in os.environ:
+                        del os.environ[key]
 
 @pytest.fixture()
 def mock_aws_secrets():
