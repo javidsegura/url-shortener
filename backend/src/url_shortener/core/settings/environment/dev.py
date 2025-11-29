@@ -29,8 +29,13 @@ class DevSettings(BaseSettings):
 			"MYSQL_SYNC_DRIVER",
 			"MYSQL_ASYNC_DRIVER",
 			"CLOUD_PROVIDER",
-			# "USING_FIREBASE_EMULATOR", "FB_AUTH_EMULATOR_HOST", "FB_PROJECT_ID"
 		]
+
+		# Test-specific vars
+		if os.getenv("ENVIRONMENT") == "test":
+			base_vars.extend(
+				["USING_FIREBASE_EMULATOR", "FB_AUTH_EMULATOR_HOST", "FB_PROJECT_ID"]
+			)
 
 		# Cloud-specific vars
 		cloud_provider = os.getenv("CLOUD_PROVIDER", "aws").lower()
@@ -52,7 +57,7 @@ class DevSettings(BaseSettings):
 		self._extract_storage_variables()
 		self._extract_app_logic_variables()
 		self._extract_database_variables()
-		# self._extract_firebase_variables()
+		self._extract_firebase_variables()
 
 	def _extract_database_variables(self):
 		self.REDIS_URL = os.getenv("REDIS_URL")
@@ -81,7 +86,7 @@ class DevSettings(BaseSettings):
 				f"Unsupported CLOUD_PROVIDER: {self.CLOUD_PROVIDER}. Use 'aws' or 'azure'"
 			)
 
-	# def _extract_firebase_variables(self):
-	#       self.USING_FIREBASE_EMULATOR = os.getenv("USING_FIREBASE_EMULATOR")
-	#       self.FB_AUTH_EMULATOR_HOST= os.getenv("FB_AUTH_EMULATOR_HOST")
-	#       self.FB_PROJECT_ID = os.getenv("FB_PROJECT_ID")
+	def _extract_firebase_variables(self):
+		self.USING_FIREBASE_EMULATOR = os.getenv("USING_FIREBASE_EMULATOR")
+		self.FB_AUTH_EMULATOR_HOST = os.getenv("FB_AUTH_EMULATOR_HOST")
+		self.FB_PROJECT_ID = os.getenv("FB_PROJECT_ID")

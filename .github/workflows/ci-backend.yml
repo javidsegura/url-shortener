@@ -13,42 +13,43 @@ on:
     paths:
       - 'backend/**'
 
+env:
+  PYTHON_VERSION: '3.11'
+  WORKING_DIR: ./backend
+
 jobs:
-  lint-and-security: # DEBUG: gotta add linter too (currently just formatter)
+  # ------------------------------------------------------------------
+  # STAGE 1: FAST CHECKS
+  # ------------------------------------------------------------------
+  lint-and-security:
     runs-on: ubuntu-latest
-    
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      
-      - name: Cache Python dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-venv-
-      
-      - name: Install backend dependencies
-        working-directory: ./backend
-        run: make install-full
-      
-      # - name: Run linting checks
-      #   working-directory: ./backend
-      #   run: make lint-check
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: make install
 
       - name: Run linting checks
-        working-directory: ./backend
         run: make format
-      
+
       - name: Run security scan
-        working-directory: ./backend
         run: make static-security-analysis
-      
+
       - name: Upload security reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -56,298 +57,273 @@ jobs:
           name: security-reports
           path: backend/bandit-report.json
 
-  smoke-tests:
-    runs-on: ubuntu-latest
-    needs: lint-and-security
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Cache Python dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-venv-
-      
-      - name: Install dependencies
-        working-directory: ./backend
-        run: make install-full
-      
-      - name: Run smoke tests
-        working-directory: ./backend
-        run: |
-          source ../.venv/bin/activate
-          pytest test/smoke/ -v --maxfail=1
-
-      
-
   unit-tests:
     runs-on: ubuntu-latest
-    needs: [lint-and-security, smoke-tests]
-    
+    needs: lint-and-security
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      
-      - name: Cache Python dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-venv-
-      
+          python-version: ${{ env.PYTHON_VERSION }}
+
       - name: Install dependencies
-        working-directory: ./backend
         run: make install-full
-      
-      - name: Run unit tests
-        working-directory: ./backend
-        run: |
-          source ../.venv/bin/activate
-          pytest test/unit/ -v \
-            --cov=src \
-            --cov-report=xml \
-            --cov-report=term \
-            --cov-fail-under=70 \
-            --junitxml=test-results.xml
-      
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: unit-test-results
-          path: backend/test-results.xml
-        
-  regression-tests: # Just smoke and move to the top
-    runs-on: ubuntu-latest
-    needs: [unit-tests]
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Cache Python dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ hashFiles('**/pyproject.toml') }}
-      
-      - name: Install dependencies
-        working-directory: ./backend
-        run: make install
-      
-      - name: Create test environment file
-        working-directory: ./backend
+
+      # ADDED: Create .env.test because conftest.py needs it
+      - name: Create Test Environment Config
         run: |
           mkdir -p env_config/synced
           cat > env_config/synced/.env.test << EOF
-          ENVIRONMENT=test
+          ENVIRONMENT="test"
+          CLOUD_PROVIDER="azure"
+          USING_FIREBASE_EMULATOR="true"
+          FB_AUTH_EMULATOR_HOST="localhost:19099"
+          FB_PROJECT_ID="url-shortener-abadb"
+          REDIS_URL="redis://localhost:6379"
+          MYSQL_USER="root"
+          MYSQL_PASSWORD="rootpassword"
+          MYSQL_HOST="database"
+          MYSQL_PORT="3306"
+          MYSQL_DATABASE="url_shortener"
+          MYSQL_SYNC_DRIVER="mysql+pymysql"
+          MYSQL_ASYNC_DRIVER="mysql+aiomysql"
+          AWS_MAIN_REGION="us-east-1"
+          S3_MAIN_BUCKET_NAME="test-bucket"
+          AZURE_STORAGE_ACCOUNT_NAME="storage_acc"
+          AZURE_STORAGE_ACCOUNT_KEY="storage_acc_key"
+          AZURE_STORAGE_CONTAINER_NAME="images"
           EOF
-      
-      - name: Start test environment
-        working-directory: ./backend
-        env:
-          ENVIRONMENT: test
-        run: make test-docker-compose-start
-      
-      - name: Wait for services
-        run: sleep 20
-      
-      - name: Run smoke tests
-        working-directory: ./backend
-        run: |
-          source ../.venv/bin/activate
-          pytest test/smoke/ -v --maxfail=1
-      
-      - name: Run regression tests
-        working-directory: ./backend
-        if: always()
-        run: |
-          source ../.venv/bin/activate
-          pytest test/regression/ -v --tb=short
-      
-      - name: Stop test environment
-        if: always()
-        working-directory: ./backend
-        env:
-          ENVIRONMENT: test
-        run: make test-docker-compose-stop
 
-  # integration-tests: 
+      - name: Run unit tests
+        env:
+          ENVIRONMENT: test
+        run: make unit-test
+
+      - name: Upload coverage results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/coverage.xml
+
+  smoke-tests:
+    runs-on: ubuntu-latest
+    needs: lint-and-security
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: make install
+
+      # ADDED: Create .env.test because conftest.py needs it
+      - name: Create Test Environment Config
+        run: |
+          mkdir -p env_config/synced
+          cat > env_config/synced/.env.test << EOF
+          ENVIRONMENT="test"
+          CLOUD_PROVIDER="azure"
+          USING_FIREBASE_EMULATOR="true"
+          FB_AUTH_EMULATOR_HOST="localhost:19099"
+          FB_PROJECT_ID="url-shortener-abadb"
+          REDIS_URL="redis://localhost:6379"
+          MYSQL_USER="root"
+          MYSQL_PASSWORD="rootpassword"
+          MYSQL_HOST="database"
+          MYSQL_PORT="3306"
+          MYSQL_DATABASE="url_shortener"
+          MYSQL_SYNC_DRIVER="mysql+pymysql"
+          MYSQL_ASYNC_DRIVER="mysql+aiomysql"
+          AWS_MAIN_REGION="us-east-1"
+          S3_MAIN_BUCKET_NAME="test-bucket"
+          AZURE_STORAGE_ACCOUNT_NAME="storage_acc"
+          AZURE_STORAGE_ACCOUNT_KEY="storage_acc_key"
+          AZURE_STORAGE_CONTAINER_NAME="images"
+          EOF
+
+      - name: Run smoke tests
+        env:
+          ENVIRONMENT: test
+        run: make smoke-test
+
+  # ------------------------------------------------------------------
+  # STAGE 2: HEAVY TESTS
+  # ------------------------------------------------------------------
+  integration-and-regression:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, smoke-tests]
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Create Test Environment Config
+        run: |
+          mkdir -p env_config/synced
+          cat > env_config/synced/.env.test << EOF
+          ENVIRONMENT="test"
+          CLOUD_PROVIDER="azure"
+          USING_FIREBASE_EMULATOR="true"
+          FB_AUTH_EMULATOR_HOST="localhost:19099"
+          FB_PROJECT_ID="url-shortener-abadb"
+          REDIS_URL="redis://localhost:6379"
+          MYSQL_USER="root"
+          MYSQL_PASSWORD="rootpassword"
+          MYSQL_HOST="database"
+          MYSQL_PORT="3306"
+          MYSQL_DATABASE="url_shortener"
+          MYSQL_SYNC_DRIVER="mysql+pymysql"
+          MYSQL_ASYNC_DRIVER="mysql+aiomysql"
+          AWS_MAIN_REGION="us-east-1"
+          S3_MAIN_BUCKET_NAME="test-bucket"
+          AZURE_STORAGE_ACCOUNT_NAME="storage_acc"
+          AZURE_STORAGE_ACCOUNT_KEY="storage_acc_key"
+          AZURE_STORAGE_CONTAINER_NAME="images"
+          EOF
+
+      - name: Start Docker Environment
+        env:
+          ENVIRONMENT: test
+        run: |
+          make test-start
+          echo "Waiting for services to stabilize..."
+          sleep 15
+
+      - name: Run Integration Tests
+        run: make integration-test
+
+      - name: Run Regression Tests
+        run: make regression-test
+
+      - name: Stop Docker Environment
+        if: always()
+        env:
+          ENVIRONMENT: test
+        run: make test-stop
+
+  # load-tests:
   #   runs-on: ubuntu-latest
-  #   needs: [lint-and-security, smoke-tests]
-  #   if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
-    
+  #   needs: [unit-tests, smoke-tests]
+  #   if: github.event_name == 'pull_request' && github.base_ref == 'main'
+  #   defaults:
+  #     run:
+  #       working-directory: ${{ env.WORKING_DIR }}
+
   #   steps:
   #     - uses: actions/checkout@v4
-      
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: '3.11'
-      
-  #     - name: Cache Python dependencies
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: .venv
-  #         key: ${{ runner.os }}-venv-${{ hashFiles('**/pyproject.toml') }}
-      
-  #     - name: Install dependencies
-  #       working-directory: ./backend
-  #       run: make install-full
-      
-  #     - name: Create test environment file # DEBUG: UPDATE THIS ACCORIDNGLY 
-  #       working-directory: ./backend
-  #       run: |
-  #         mkdir -p env_config/synced
-  #         cat > env_config/synced/.env.test << EOF
-  #         ENVIRONMENT=test
-  #         DATABASE_URL=postgresql://postgres:testpass@localhost:5432/testdb
-  #         REDIS_URL=redis://localhost:6379
-  #         EOF
-      
-  #     - name: Start test environment
-  #       working-directory: ./backend
-  #       env:
-  #         ENVIRONMENT: test
-  #       run: make test-docker-compose-start
-      
-  #     - name: Wait for services # IS THIS NEEDED?
-  #       run: |
-  #         echo "Waiting for services to be ready..."
-  #         sleep 20
-  #         docker ps
-      
-  #     - name: Run integration tests
-  #       working-directory: ./backend
-  #       run: make pytest-run
-      
-  #     - name: Stop test environment
-  #       if: always()
-  #       working-directory: ./backend
-  #       env:
-  #         ENVIRONMENT: test
-  #       run: make test-docker-compose-stop
-  
-  # load-test:
-  #   runs-on: ubuntu-latest
-  #   needs: [lint-and-security, smoke-tests]
-    
-  #   steps:
-  #     - uses: actions/checkout@v4
-      
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: '3.11'
-      
-  #     - name: Cache Python dependencies
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: .venv
-  #         key: ${{ runner.os }}-venv-${{ hashFiles('**/pyproject.toml') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-venv-
-      
-  #     - name: Install dependencies
-  #       working-directory: ./backend
-  #       run: make install-full
-      
+
+  #     # --- [Setup Steps: Install K6, UV, Python, Dependencies, .env file] ---
+  #     # (Copy these from your previous working snippet to keep this readable)
   #     - name: Install k6
   #       run: |
-  #         sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D9
-  #         echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+  #         sudo gpg -k
+  #         sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+  #         echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
   #         sudo apt-get update
-  #         sudo apt-get install -y k6
-      
-  #     - name: Create test environment file
-  #       working-directory: ./backend
+  #         sudo apt-get install k6
+
+  #     - name: Install uv
+  #       uses: astral-sh/setup-uv@v3
+  #       with:
+  #         enable-cache: true
+  #         cache-dependency-glob: "backend/pyproject.toml"
+
+  #     - name: Set up Python ${{ env.PYTHON_VERSION }}
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: ${{ env.PYTHON_VERSION }}
+
+  #     - name: Install dependencies
+  #       run: make install
+
+  #     - name: Create Test Environment Config
   #       run: |
   #         mkdir -p env_config/synced
   #         cat > env_config/synced/.env.test << EOF
-  #         ENVIRONMENT=test
-  #         REDIS_URL=redis://localhost:6379
-  #         MYSQL_USER=root
-  #         MYSQL_PASSWORD=rootpassword
-  #         MYSQL_HOST=localhost
-  #         MYSQL_PORT=3307
-  #         MYSQL_DATABASE=url_shortener
-  #         MYSQL_SYNC_DRIVER=mysql+pymysql
-  #         MYSQL_ASYNC_DRIVER=mysql+aiomysql
-  #         CLOUD_PROVIDER=aws
-  #         S3_MAIN_BUCKET_NAME=test-bucket
-  #         AWS_MAIN_REGION=us-east-1
+  #         ENVIRONMENT="test"
+  #         CLOUD_PROVIDER="azure"
+  #         USING_FIREBASE_EMULATOR="true"
+  #         FB_AUTH_EMULATOR_HOST="localhost:19099"
+  #         FB_PROJECT_ID="url-shortener-abadb"
+  #         REDIS_URL="redis://localhost:6379"
+  #         MYSQL_USER="root"
+  #         MYSQL_PASSWORD="rootpassword"
+  #         MYSQL_HOST="database"
+  #         MYSQL_PORT="3306"
+  #         MYSQL_DATABASE="url_shortener"
+  #         MYSQL_SYNC_DRIVER="mysql+pymysql"
+  #         MYSQL_ASYNC_DRIVER="mysql+aiomysql"
+  #         AWS_MAIN_REGION="us-east-1"
+  #         S3_MAIN_BUCKET_NAME="test-bucket"
+  #         AZURE_STORAGE_ACCOUNT_NAME="storage_acc"
+  #         AZURE_STORAGE_ACCOUNT_KEY="storage_acc_key"
+  #         AZURE_STORAGE_CONTAINER_NAME="images"
   #         EOF
-      
-  #     - name: Start test environment (database, redis)
-  #       working-directory: ./backend
+
+  #     - name: Start Full Stack (DB + Backend)
   #       env:
   #         ENVIRONMENT: test
+  #       run: make test-start
+
+  #     - name: Verify Backend Health
   #       run: |
-  #         make test-docker-compose-start
-  #         # Wait for database to be ready
-  #         timeout 60 bash -c 'until docker exec url-shortener-database-1 mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -p"rootpassword" --silent; do sleep 2; done'
-      
-  #     - name: Start backend server
-  #       working-directory: ./backend
-  #       env:
-  #         ENVIRONMENT: test
-  #       run: |
-  #         source ../.venv/bin/activate
-  #         nohup uvicorn src.url_shortener.main:app --host 0.0.0.0 --port 8000 > server.log 2>&1 &
-  #         echo $! > server.pid
-      
-  #     - name: Wait for backend server to be ready
-  #       run: |
-  #         echo "Waiting for backend server to be ready..."
-  #         timeout 60 bash -c 'until curl -f http://localhost:8000/api/health/ping; do sleep 2; done' || exit 1
-  #         echo "Backend server is ready!"
-      
-  #     - name: Run k6 load tests
-  #       working-directory: ./backend
-  #       run: |
-  #         k6 run --out json=test/load/k6-results.json test/load/load_test.js || true
-      
-  #     - name: Stop backend server
+  #         timeout 30s bash -c 'until curl -s --fail http://localhost:8000/api/health/ping; do sleep 2; done'
+
+  #     - name: Run Load Tests
+  #       run: make load-tests
+
+  #     - name: Stop Docker Environment
   #       if: always()
-  #       working-directory: ./backend
-  #       run: |
-  #         if [ -f server.pid ]; then
-  #           kill $(cat server.pid) || true
-  #           rm server.pid
-  #         fi
-  #         pkill -f "uvicorn src.url_shortener.main:app" || true
-      
-  #     - name: Stop test environment
-  #       if: always()
-  #       working-directory: ./backend
   #       env:
   #         ENVIRONMENT: test
-  #       run: make test-docker-compose-stop
-      
-  #     - name: Upload load test results
+  #       run: make test-stop
+
+  #     - name: Upload K6 Results
   #       if: always()
   #       uses: actions/upload-artifact@v4
   #       with:
-  #         name: load-test-results
-  #         path: |
-  #           backend/test/load/k6-results.json
-  #           backend/server.log
-
-
+  #         name: k6-load-test-results
+  #         path: backend/test/load/k6-results.json

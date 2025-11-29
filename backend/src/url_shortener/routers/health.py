@@ -23,16 +23,42 @@ async def cheeck_backend_health_dependencies_endpoint(
 	db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Dict:
 	"""
-	You could have here the response schema to be service with variables\
-		being 'status' and 'error' (if any)
+	Simple readiness probe that only returns 200 when all dependencies are OK.
 	"""
-	redis_status = await test_redis_connection()
-	db_status = await test_db_connection(db=db)
-	return {"services": {"redis": redis_status, "db": db_status}}
+
+	checks = {"status": "healthy", "checks": {}}
+
+	# Redis
+	try:
+		redis_connected = await test_redis_connection()
+		if not redis_connected:
+			raise Exception("Redis connection failed")
+		checks["checks"]["redis"] = "ok"
+	except Exception as e:
+		checks["status"] = "unhealthy"
+		checks["checks"]["redis"] = f"failed: {e}"
+
+	# Database
+	try:
+		db_connected = await test_db_connection(db=db)
+		if not db_connected:
+			raise Exception("Database connection failed")
+		checks["checks"]["db"] = "ok"
+	except Exception as e:
+		checks["status"] = "unhealthy"
+		checks["checks"]["db"] = f"failed: {e}"
+
+	if checks["status"] == "unhealthy":
+		raise HTTPException(
+			status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+			detail=checks,
+		)
+
+	return checks
 
 
 @router.get(path="/ping", status_code=status.HTTP_200_OK)
 async def cheeck_backend_health_endpoint(
 	app_settings: Annotated[Settings, Depends(get_app_settings)],
 ) -> Dict:
-	raise HTTPException(status_code=500)
+	return {"response": "pong (2ND DEPLOYMENT) -- IM FINALLY WORKING"}

@@ -28,18 +28,22 @@ help: ## Show this help message
 
 # 0) Set-up
 install: ## Install backend dependencies
-	python3.11 -m venv $(VENV)
-	$(VENV_ACTIVATE) && pip3 install -e "."
+	uv venv $(VENV) --python 3.11
+	uv pip install -e ".[dev,tests]"
 	$(VENV_ACTIVATE) && alembic init migrations || echo "alembic init already started"
 install-full: ## Install backend dependices for client + dev usage
-	python3.11 -m venv $(VENV)
-	$(VENV_ACTIVATE) && pip3 install -e ".[dev, tests]"
+	uv venv $(VENV) --python 3.11
+	uv pip install -e ".[dev,tests]"
 	$(VENV_ACTIVATE) && alembic init migrations || echo "alembic init already started"
+	@if command -v brew >/dev/null 2>&1; then \
+		brew install k6 || echo "Note: k6 installation skipped (may already be installed)"; \
+	else \
+		echo "Note: Homebrew not found, skipping k6 installation. Install manually with: brew install k6"; \
+	fi
 
-
-# 1) Boot-up 
+# 1) Boot-up
 dev: ## Start backend development server
-	$(VENV_ACTIVATE) &&  ENVIRONMENT=dev uvicorn $(APP_PATH) --reload --host 0.0.0.0 --port $(PORT)
+	$(VENV_ACTIVATE) &&  ENVIRONMENT=$(ENVIRONMENT) uvicorn $(APP_PATH) --reload --host 0.0.0.0 --port $(PORT)
 
 
 
@@ -58,7 +62,7 @@ lint-check: ## Run linting checks (CI)
 	@echo "$(BLUE)Running ruff checks...$(RESET)"
 	@$(VENV_ACTIVATE) && ruff check  src/
 	@echo "$(BLUE)Running ruff checks with diff...$(RESET)"
-	@$(VENV_ACTIVATE) && ruff check  --diff --fix src/ 
+	@$(VENV_ACTIVATE) && ruff check  --diff --fix src/
 
 format: ## Formats
 	@echo "$(YELLOW)Running CI formatting$(RESET)"
@@ -68,7 +72,7 @@ format: ## Formats
 format-fix: ## Format code (for pre-commit)
 	@echo "$(YELLOW)Formatting code with ruff...$(RESET)"
 	$(VENV_ACTIVATE) && ruff format src/
-	
+
 
 
 static-security-analysis: ## Run static security analysis
@@ -82,7 +86,7 @@ static-security-analysis: ## Run static security analysis
 ## DB
 db-create-migration-files:
 	@if [ -z "$(MESSAGE)" ]; then echo "❌ Please provide MESSAGE='your description'"; exit 1; fi
-	
+
 	ENVIRONMENT=dev.local && $(VENV_ACTIVATE) && alembic revision --autogenerate -m "$(MESSAGE)"
 
 
@@ -109,51 +113,58 @@ db-downgrade-prior-version:
 db-downgrade-specific-version:
 	$(VENV_ACTIVATE) && alembic downgrade $(MIGRATION_ID)
 
-
-push_docker: ## Push Docker image with version tag
-	$(MAKE) check_enviroment_variables
-	@if [ -z "$(BACKEND_VERSION)" ]; then \
-		echo "ERROR: BACKEND_TAG variable is required. Usage: make push_docker BACKEND_TAG=v1.2.3"; \
-		exit 1; \
-	fi
-	docker login
-	docker buildx build \
-		-t javidsegura/url_shortener_backend:$(ENVIRONMENT)-$(BACKEND_VERSION) \
-		-t javidsegura/url_shortener_backend:$(ENVIRONMENT) \
-		--platform linux/amd64,linux/arm64 \
-		--push \
-		-f ./Dockerfile ./
-	@echo "✓ Pushed images:"
-	@echo "  - javidsegura/url_shortener_backend:$(ENVIRONMENT)-$(BACKEND_VERSION)"
-	@echo "  - javidsegura/url_shortener_backend:$(ENVIRONMENT)"
-
 # 4) Tests
+# 4.1 ) Tests set-up
+# 4) Tests set-up
+test-start: ## Stats docker compose for integration tests of endpoints
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../deployment/docker-compose.yml -f ../deployment/docker-compose.test.yml -p $(PROJECT_NAME) up --build -d
+
+test-stop: ## Stops docker compose for integration tests of endpoints
+	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../deployment/docker-compose.yml -f ../deployment/docker-compose.test.yml -p $(PROJECT_NAME) down -v
+# 4.2) Tests run
 pytest-run:
 	$(VENV_ACTIVATE) && pytest -s -vv \
-					--cov=url_shortener \
-					--cov-report=term-missing \
-					test/integration/endpoints/
+					test/smoke/endpoints
 
-
-unit-test: ## Run all unit tests
+unit-test: ## Run all unit tests with coverage
 	@echo "$(YELLOW)Running all tests...$(RESET)"
-	$(VENV_ACTIVATE) && python3 -m pytest test/unit/database -v
+	$(VENV_ACTIVATE) && python3 -m pytest test/unit/ -v --cov=src/url_shortener --cov-report=term --cov-fail-under=70
 
 integration-test: ## Runn all integration tests
-	$(VENV_ACTIVATE) && python3 -m pytest -s -vv test/integration/endpoints
-	
+	$(VENV_ACTIVATE) && python3 -m pytest -s -vv test/integration/
 
-test-docker-compose-start: ## Stats docker compose for integration tests of endpoints
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../docker-compose.yml -f ../docker-compose.test.yml -p $(PROJECT_NAME) up --build 
+regression-test: ## Run all regression tests
+	@echo "$(YELLOW)Running regression tests...$(RESET)"
+	$(VENV_ACTIVATE) && python3 -m pytest test/regression/ -v
 
-test-docker-compose-stop: ## Stops docker compose for integration tests of endpoints
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f ../docker-compose.yml -f ../docker-compose.test.yml -p $(PROJECT_NAME) down -v
+smoke-test: ## Run all smoke endpoint tests
+	@echo "$(YELLOW)Running smoke endpoint tests...$(RESET)"
+	$(VENV_ACTIVATE) && python3 -m pytest test/smoke/ -v
+
+load-tests: ## Run load tests with k6
+	@echo "$(YELLOW)Running load tests...$(RESET)"
+	k6 run --out json=test/load/k6-results.json test/load/load_test.js
 
 # 5) Miscellaneous
-check_enviroment_variables:
+check-environment-variables:
 	@if [ -z "$$ENVIRONMENT" ]; then \
 		echo "Error: ENVIRONMENT must be defined"; \
 		exit 1; \
 	fi
 	echo "Environment is: $(ENVIRONMENT)"
 
+# 6) Docker
+push_docker: ## Push Docker image with version tag
+	$(MAKE) check-environment-variables
+	@if [ -z "$(BACKEND_VERSION)" ]; then \
+		echo "$(RED)ERROR: BACKEND_VERSION required$(RESET)"; \
+		echo "Usage: make push_docker BACKEND_VERSION=v1.0.0"; \
+		exit 1; \
+	fi
+	docker buildx build \
+		-t javidsegura/url_shortener_backend:$(ENVIRONMENT)-$(BACKEND_VERSION) \
+		-t javidsegura/url_shortener_backend:$(ENVIRONMENT) \
+		--platform linux/amd64,linux/arm64 \
+		--push \
+		-f ./Dockerfile ./
+	@echo "$(GREEN)✓ Pushed: $(ENVIRONMENT)-$(BACKEND_VERSION)$(RESET)"

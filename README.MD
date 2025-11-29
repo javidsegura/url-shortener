@@ -5,17 +5,17 @@
 ![React](https://img.shields.io/badge/frontend-react%4019.1.1-blue)
 ![AWS](https://img.shields.io/badge/deploy-aws-orange)
 
-# URL Shortener  
-  
-A production-ready URL shortening service built with FastAPI, React, and deployed on AWS infrastructure.  
+# URL Shortener
+
+A production-ready URL shortening service built with FastAPI, React, and deployed on AWS infrastructure.
 
 Deployment architecture:
 ![Deployment Architecture](media/Deployment%20Architecture.drawio.png)
 
-  
-## Overview  
-  
-This URL shortener provides a scalable solution for creating and managing shortened URLs. The system features a FastAPI backend with multiple shortening strategies, a React + TypeScript frontend, and automated infrastructure provisioning using Terraform and Ansible. It supports local development with hot-reloading and production deployment to AWS with containerized services.  
+
+## Overview
+
+This URL shortener provides a scalable solution for creating and managing shortened URLs. The system features a FastAPI backend with multiple shortening strategies, a React + TypeScript frontend, and automated infrastructure provisioning using Terraform and Ansible. It supports local development with hot-reloading and production deployment to AWS with containerized services.
 
 ## See extended documentation here
 [Extended documentation](https://deepwiki.com/javidsegura/url-shortener/2.2-local-development-setup)
@@ -38,6 +38,12 @@ This is validated by `Makefile:86-91` which exits with an error if **ENVIRONMENT
 -----
 
 ### 2\. Install All Dependencies
+
+#### System Dependencies
+      - UV: "[how to install"](https://docs.astral.sh/uv/#installation)
+      - K6: "[how to install"](https://grafana.com/docs/k6/latest/set-up/install-k6/)
+
+#### Other dependencies
 
 From the repository root:
 
@@ -83,17 +89,17 @@ The `-e` flag installs in editable mode, allowing code changes without reinstall
 
 
 ## Local dev set-up
-### 0. Generate remote infra state 
+### 0. Generate remote infra state
 #### 1. Create infra/terraform/set-up/terraform.tfvars and write
 project_name = "url-shortener"
-#### 2. Generate remote state 
+#### 2. Generate remote state
 ```bash
 make -C infra start-remote-state
 ```
 ### 1. Set up environmental variables
 Before installing, set the **ENVIRONMENT** variable:
 ```bash
-      export ENVIRONMENT=dev 
+      export ENVIRONMENT=dev
 ```
 ### 2. Generate `.env` Templates
 You'll need to create and populate `.env` files for both the backend and frontend services.
@@ -101,7 +107,7 @@ You'll need to create and populate `.env` files for both the backend and fronten
 ### Backend
 
 1. Navigate to the directory `backend/env_config/base`.
-1.5. You will need to create `env_config` and `/base` and `/synced` inside it 
+1.5. You will need to create `env_config` and `/base` and `/synced` inside it
 
 2. Create a new file named `.env.dev`.
 
@@ -130,7 +136,7 @@ You'll need to create and populate `.env` files for both the backend and fronten
 ### Frontend
 
 1. Go to the frontend directory: `frontend/app/env_config/base`. \
-1.5. You will need to create `env_config` and `/base` and `/synced` inside it 
+1.5. You will need to create `env_config` and `/base` and `/synced` inside it
 
 2. Create a new file named `.env.dev`.
 
@@ -140,12 +146,12 @@ You'll need to create and populate `.env` files for both the backend and fronten
 1. Go to infra file: `infra/terraform/environment/dev/terraform.tfvars`
 2. Fill in the following variables:
 ```bash
-environment="dev" 
+environment="dev"
 main_region="" # E.g., us-east-1
 
 ```
 
-### 3. Start app locally 
+### 3. Start app locally
 ```bash
 
 # For all of these commands you need the docker daemon to be running in the background!
@@ -163,40 +169,40 @@ make -C backend pytest-run # Coverage will appear in stdout
 Based on the codebase analysis, here is the tech stack used in the URL shortener project:
 
 ## Backend
-- **Python** (>=3.8) [1](#1-0) 
-- **FastAPI** (web framework) [2](#1-1) 
-- **Uvicorn** (ASGI server) [3](#1-2) 
-- **Gunicorn** (production server) [4](#1-3) 
-- **Pydantic** (data validation) [5](#1-4) 
-- **SQLAlchemy** (ORM with async support) [6](#1-5) 
-- **MySQL** (database) [7](#1-6) 
-- **Redis** (caching) [8](#1-7) 
-- **Alembic** (database migrations) [9](#1-8) 
-- **Firebase Admin** (authentication) [10](#1-9) 
-- **Boto3** (AWS SDK) [11](#1-10) 
+- **Python** (>=3.8) [1](#1-0)
+- **FastAPI** (web framework) [2](#1-1)
+- **Uvicorn** (ASGI server) [3](#1-2)
+- **Gunicorn** (production server) [4](#1-3)
+- **Pydantic** (data validation) [5](#1-4)
+- **SQLAlchemy** (ORM with async support) [6](#1-5)
+- **MySQL** (database) [7](#1-6)
+- **Redis** (caching) [8](#1-7)
+- **Alembic** (database migrations) [9](#1-8)
+- **Firebase Admin** (authentication) [10](#1-9)
+- **Boto3** (AWS SDK) [11](#1-10)
 
 ## Frontend
-- **React** (19.1.1) [12](#1-11) 
-- **TypeScript** [13](#1-12) 
-- **Vite** (build tool) [14](#1-13) 
-- **React Router DOM** (routing) [15](#1-14) 
-- **Tailwind CSS** (styling) [16](#1-15) 
-- **Firebase** (client SDK) [17](#1-16) 
-- **Radix UI** (component library) [18](#1-17) 
-- **Lucide React** (icons) [19](#1-18) 
+- **React** (19.1.1) [12](#1-11)
+- **TypeScript** [13](#1-12)
+- **Vite** (build tool) [14](#1-13)
+- **React Router DOM** (routing) [15](#1-14)
+- **Tailwind CSS** (styling) [16](#1-15)
+- **Firebase** (client SDK) [17](#1-16)
+- **Radix UI** (component library) [18](#1-17)
+- **Lucide React** (icons) [19](#1-18)
 
 ## Infrastructure & DevOps
-- **Docker** & **Docker Compose** [20](#1-19) 
-- **Nginx** (reverse proxy) [21](#1-20) 
-- **Terraform** (infrastructure as code) [22](#1-21) 
-- **Ansible** (configuration management) [23](#1-22) 
+- **Docker** & **Docker Compose** [20](#1-19)
+- **Nginx** (reverse proxy) [21](#1-20)
+- **Terraform** (infrastructure as code) [22](#1-21)
+- **Ansible** (configuration management) [23](#1-22)
 - **AWS** (cloud provider - RDS for database)
 
 ## Testing & Development Tools
-- **Pytest** (backend testing) [24](#1-23) 
-- **ESLint** (frontend linting) [25](#1-24) 
-- **Ruff** (Python linting/formatting) [26](#1-25) 
-- **Pre-commit** (git hooks) [27](#1-26) 
+- **Pytest** (backend testing) [24](#1-23)
+- **ESLint** (frontend linting) [25](#1-24)
+- **Ruff** (Python linting/formatting) [26](#1-25)
+- **Pre-commit** (git hooks) [27](#1-26)
 
 ## Notes
 The project follows a microservices architecture with separate backend (Python/FastAPI) and frontend (React/TypeScript) applications. The infrastructure is containerized using Docker and can be orchestrated with Docker Compose. For production deployments, the project uses Terraform for AWS infrastructure provisioning (including RDS for the MySQL database) and Ansible for configuration management.

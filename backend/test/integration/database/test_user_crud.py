@@ -31,7 +31,7 @@ class TestUserHealthyInput:
 
             looked_up_user = await read_user(db_session, fake_user.user_id)
             assert looked_up_user.user_id == fake_user.user_id
-      
+
       @pytest.mark.asyncio
       async def test_user_deletion(self, db_session: AsyncSession):
             fake_user = User(
@@ -47,4 +47,3 @@ class TestUserHealthyInput:
             assert user_was_deleted
             looked_up_user = await read_user(db_session, fake_user.user_id)
             assert looked_up_user is None
-

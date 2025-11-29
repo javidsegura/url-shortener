@@ -11,20 +11,20 @@
     backend_image_tag: "production-{{ lookup('env', 'BACKEND_VERSION') | default('production', true) }}"
     previous_tag_file: "{{ remote_project_path }}/.previous_backend_tag"
     health_check_retries: 3
-    health_check_delay: 10
-    
+    health_check_delay: 30
+
   tasks:
   - name: Show resolved paths
     debug:
       msg: "Source path is {{ src_backend_env_synced_path }} and destination path is {{ dest_backend_env_synced_path }}"
-      
+
   - name: Show deployment tag
     debug:
       msg: "Deploying backend image tag: {{ backend_image_tag }}"
 
   - name: Ensure Docker and dependencies are installed (APT)
     ansible.builtin.apt:
-      name: 
+      name:
         - docker.io
         - python3
         - python3-pip
@@ -35,7 +35,7 @@
 
   - name: Ensure Docker and dependencies are installed (DNF)
     ansible.builtin.dnf:
-      name: 
+      name:
         - docker
         - python3
         - python3-pip
@@ -43,22 +43,22 @@
       state: present
       update_cache: yes
     when: ansible_pkg_mgr == "dnf"
-      
+
   - name: Start Docker service
     ansible.builtin.service:
       name: docker
       state: started
       enabled: yes
-      
+
   - name: Add ec2 user to the docker group
     ansible.builtin.user:
       name: "{{ target_user }}"
-      groups: docker 
+      groups: docker
       append: yes
-      
+
   - name: Reset ssh connection in order to update user persmission
     ansible.builtin.meta: reset_connection
-    
+
   - name: Create project directory
     ansible.builtin.file:
       path: "{{ remote_project_path }}"
@@ -66,7 +66,7 @@
       owner: "{{ target_user }}"
       group: docker
       mode: "0755"
-      
+
   - name: Create frontend app directory
     ansible.builtin.file:
       path: "{{ remote_project_path }}/frontend/app"
@@ -74,7 +74,7 @@
       owner: "{{ target_user }}"
       group: docker
       mode: "0755"
-      
+
   - name: Create backend directory
     ansible.builtin.file:
       path: "{{ remote_project_path }}/backend"
@@ -82,7 +82,7 @@
       owner: "{{ target_user }}"
       group: docker
       mode: "0755"
-      
+
   - name: Create backend env_config directory structure
     ansible.builtin.file:
       path: "{{ remote_project_path }}/backend/env_config/synced"
@@ -90,7 +90,7 @@
       owner: "{{ target_user }}"
       group: docker
       mode: "0755"
-      
+
   - name: Copy deployment directory structure
     ansible.builtin.copy:
       src: "../../../deployment/"
@@ -99,7 +99,7 @@
       group: docker
       mode: "0644"
       directory_mode: "0755"
-      
+
   - name: Copy backend synced .env
     ansible.builtin.copy:
       src: "{{ src_backend_env_synced_path  }}"
@@ -162,14 +162,14 @@
 
   # Deploy new version
   - name: Deploy new backend version
-    community.docker.docker_compose_v2: 
+    community.docker.docker_compose_v2:
       project_src: "{{ remote_project_path }}/deployment"
       files:
         - docker-compose.yml
         - docker-compose.{{stage_environment}}.yml
       project_name: "{{ project_name }}"
       state: present
-      pull: always 
+      pull: always
       recreate: always
     environment:
       ENVIRONMENT: "{{ stage_environment }}"
@@ -178,9 +178,9 @@
       BACKEND_IMAGE_TAG: "{{ backend_image_tag }}"
 
   # Health check with retries
-  - name: Wait for backend health check
+  - name: Wait for backend dependency health check
     ansible.builtin.uri:
-      url: "http://{{ ansible_default_ipv4.address | default(ansible_host) }}:8000/api/health/ping"
+      url: "http://{{ ansible_default_ipv4.address | default(ansible_host) }}:8000/api/health/dependencies"
       method: GET
       status_code: 200
     register: health_check
@@ -196,15 +196,35 @@
         debug:
           msg: "Health check failed! Rolling back to {{ previous_backend_tag }}"
 
+      - name: Get ID of the failed backend container
+        # Use grep to ensure we find the container even if it is 'Exited'
+        shell: docker ps -a | grep "url-shortener-backend" | head -n 1 | awk '{print $1}'
+        register: failed_backend_id
+        ignore_errors: yes
+
+      - name: Get Docker logs of failed backend
+        shell: "docker logs {{ failed_backend_id.stdout }}"
+        register: backend_failed_logs
+        ignore_errors: yes
+        # Only run this if we actually found an ID
+        when: failed_backend_id.stdout | length > 0
+
+      - name: Print failed backend logs
+        debug:
+          var: backend_failed_logs.stdout_lines
+        when:
+          - backend_failed_logs.skipped is not defined
+          - backend_failed_logs.stdout_lines is defined
+
       - name: Deploy previous backend version
-        community.docker.docker_compose_v2: 
+        community.docker.docker_compose_v2:
           project_src: "{{ remote_project_path }}/deployment"
           files:
             - docker-compose.yml
             - docker-compose.{{stage_environment}}.yml
           project_name: "{{ project_name }}"
           state: present
-          pull: always 
+          pull: always
           recreate: always
         environment:
           ENVIRONMENT: "{{ stage_environment }}"
@@ -215,7 +235,7 @@
       - name: Fail deployment
         fail:
           msg: "Deployment failed - rolled back to {{ previous_backend_tag }}"
-    when: 
+    when:
       - health_check.failed
       - previous_tag_stat.stat.exists
 

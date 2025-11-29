@@ -61,31 +61,31 @@ def fastapi_client():
 @pytest.fixture(scope="session")
 def start_docker_compose_services():
     """Start docker compose and wait for migrations to complete."""
-    
+
     # Start docker compose services in detached mode
     try:
         print("🚀 Starting Docker Compose services...")
         subprocess.run(
-            ["make", "test-docker-compose-start"],
+            ["make", "test-start"],
             check=True,
             capture_output=True,
             text=True
         )
         print("✅ Docker Compose services started")
-        
+
         # Wait for the migration container to finish
         print("⏳ Waiting for database migrations to complete...")
         try:
             result = subprocess.run(
-                ["docker", "wait", "url-shortener-db-migration-1"], # NOTES: write about the possible conditions that come after running in detach mode
+                ["docker", "wait", "url-shortener-db-migration-1"],
                 check=True,
                 capture_output=True,
                 text=True,
                 timeout=120  # 2 minute timeout
             )
-            
+
             exit_code = result.stdout.strip()
-            
+
             if exit_code != "0":
                 # Migration failed - get logs
                 logs_result = subprocess.run(
@@ -98,9 +98,9 @@ def start_docker_compose_services():
                 print(logs_result.stdout)
                 print(logs_result.stderr)
                 raise RuntimeError(f"Migration exited with code {exit_code}")
-            
+
             print("✅ Migrations completed successfully")
-            
+
         except subprocess.TimeoutExpired:
             print("❌ Migration timeout - fetching logs...")
             logs_result = subprocess.run(
@@ -111,19 +111,19 @@ def start_docker_compose_services():
             print(logs_result.stdout)
             print(logs_result.stderr)
             raise RuntimeError("Migration took too long to complete")
-            
+
     except subprocess.CalledProcessError as e:
         print("❌ Failed to start docker-compose:")
         print("STDOUT:", e.stdout)
         print("STDERR:", e.stderr)
         raise
-    
+
     yield
-    
+
     # Cleanup
     print("🧹 Cleaning up Docker Compose services...")
     subprocess.run(
-        args=["make", "test-docker-compose-stop"],
+        args=["make", "test-stop"],
         check=True
     )
 
@@ -148,6 +148,6 @@ async def populate_database(db_session):
             country="USA",
         )
     ]
-    
+
     for user in users:
         await create_user(db_session, user_data=user)
