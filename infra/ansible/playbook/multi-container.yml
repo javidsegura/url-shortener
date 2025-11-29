@@ -196,18 +196,25 @@
         debug:
           msg: "Health check failed! Rolling back to {{ previous_backend_tag }}"
 
-      - name: Get ID of the crashed container
-        shell: docker ps -a -q -l
-        register: crashed_container_id
-
-      - name: Get Docker logs of failed container
-        shell: "docker logs {{ crashed_container_id.stdout }}"
-        register: docker_logs
+      - name: Get ID of the failed backend container
+        # Use grep to ensure we find the container even if it is 'Exited'
+        shell: docker ps -a | grep "url-shortener-backend" | head -n 1 | awk '{print $1}'
+        register: failed_backend_id
         ignore_errors: yes
 
-      - name: Print Docker logs
+      - name: Get Docker logs of failed backend
+        shell: "docker logs {{ failed_backend_id.stdout }}"
+        register: backend_failed_logs
+        ignore_errors: yes
+        # Only run this if we actually found an ID
+        when: failed_backend_id.stdout | length > 0
+
+      - name: Print failed backend logs
         debug:
-          var: docker_logs.stdout_lines
+          var: backend_failed_logs.stdout_lines
+        when:
+          - backend_failed_logs.skipped is not defined
+          - backend_failed_logs.stdout_lines is defined
 
       - name: Deploy previous backend version
         community.docker.docker_compose_v2:
