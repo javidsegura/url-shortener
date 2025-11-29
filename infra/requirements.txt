@@ -7,3 +7,4 @@ python-dateutil==2.9.0.post0
 urllib3==2.4.0
 azure-keyvault-secrets==4.9.0
 azure-identity==1.19.0
+jinja2

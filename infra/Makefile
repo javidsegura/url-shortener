@@ -14,6 +14,8 @@ RESET = \033[0m
 # VENV
 VENV = ./.venv
 VENV_ACTIVATE = source $(VENV)/bin/activate
+PYTHON = $(VENV)/bin/python
+UV = uv
 
 # DOTENVS
 BASE_BACKEND_ENV_FILE_PATH = ../backend/env_config/base/.env.$(ENVIRONMENT)
@@ -39,21 +41,20 @@ start-remote-state: ## Starts remote state for terraform (S3)
 destroy-remote-state: ## Stops remote state for terraform (S3)
 	cd $(TERRAFORM_SET_UP_PATH) && terraform destroy
 
-install: ## Initialize Terraform
-	python3.11 -m venv $(VENV)
-	pip3 install -r ./requirements.txt
+install: ## Initialize Terraform (Local Dev)
+	$(UV) venv $(VENV) --python 3.11
+	$(UV) pip install -r ./requirements.txt
 	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform init
 	brew install ansible
-	$(VENV_ACTIVATE) && pip install boto3 botocore
-	$(VENV_ACTIVATE) && ansible-galaxy install -r ./ansible/dependencies.yml
+	$(UV) pip install ansible
+	$(PYTHON) -m ansible.galaxy collection install -r ./ansible/dependencies.yml
 
-install-ci-cd:
-	python3.11 -m venv $(VENV)
-	$(VENV_ACTIVATE) && pip3 install -r ./requirements.txt
+install-ci-cd: ## CI/CD Installation
+	$(UV) venv $(VENV) --python 3.11
+	$(UV) pip install -r ./requirements.txt
 	$(MAKE) check_enviroment_variables
-	$(VENV_ACTIVATE) && pip install boto3 botocore
-	$(VENV_ACTIVATE) && ansible-galaxy install -r ./ansible/dependencies.yml
+	ansible-galaxy install -r ./ansible/dependencies.yml
 
 
 
@@ -112,7 +113,7 @@ terraform-fmt-all: ## Format all Terraform files (for pre-commit, no credentials
 sync_backend_env: ## Inject tf outputs into backend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."
 	$(MAKE) check_enviroment_variables
-	python3 -m $(SYNC_SCRIPT_PATH) \
+	$(PYTHON) -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --backend-dotenv-path $(BASE_BACKEND_ENV_FILE_PATH)
@@ -120,7 +121,7 @@ sync_backend_env: ## Inject tf outputs into backend dotenv
 sync_frontend_env:  ## Inject tf outputs into frontend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."
 	$(MAKE) check_enviroment_variables
-	python3 -m $(SYNC_SCRIPT_PATH) \
+	$(PYTHON) -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --frontend-dotenv-path $(BASE_FRONTEND_ENV_FILE_PATH)
@@ -129,7 +130,7 @@ sync_frontend_env:  ## Inject tf outputs into frontend dotenv
 sync_ansible_inventory: ## ## Inject tf outputs into ansible
 	@echo "Syncing Terraform outputs to Ansible inventory..."
 	$(MAKE) check_enviroment_variables
-	python3 -m $(SYNC_SCRIPT_PATH) \
+	$(PYTHON) -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --ansible-inventory-path $(ANSIBLE_INVENTORY_FILE_PATH)
