@@ -35,7 +35,7 @@ help: ## Show this help message
 
 
 start-remote-state: ## Starts remote state for terraform (S3)
-	cd $(TERRAFORM_SET_UP_PATH) && terraform init && terraform apply 
+	cd $(TERRAFORM_SET_UP_PATH) && terraform init && terraform apply
 destroy-remote-state: ## Stops remote state for terraform (S3)
 	cd $(TERRAFORM_SET_UP_PATH) && terraform destroy
 
@@ -52,7 +52,6 @@ install-ci-cd:
 	python3.11 -m venv $(VENV)
 	$(VENV_ACTIVATE) && pip3 install -r ./requirements.txt
 	$(MAKE) check_enviroment_variables
-	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform init
 	$(VENV_ACTIVATE) && pip install boto3 botocore
 	$(VENV_ACTIVATE) && ansible-galaxy install -r ./ansible/dependencies.yml
 
@@ -64,7 +63,7 @@ check: ## Apply Terraform configuration
 
 terraform-output:
 	$(MAKE) check_enviroment_variables
-	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform output 
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform output
 terraform-output-json:
 	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform output -json
@@ -134,7 +133,7 @@ sync_ansible_inventory: ## ## Inject tf outputs into ansible
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --ansible-inventory-path $(ANSIBLE_INVENTORY_FILE_PATH)
-sync_envs: 
+sync_envs:
 	$(MAKE) sync_backend_env
 	$(MAKE) sync_frontend_env
 sync_all: ## Syncs tf output in dotenvs (backend and frontend) and ansible
@@ -145,7 +144,7 @@ extract-db-credentials: ## Extract credentials from db
 	python3 -m scripts.resource_connections.extract_db_credentials \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH)
 
-connection-ssh-web-server: ## Send TCP traffic to port 22 in remote host 
+connection-ssh-web-server: ## Send TCP traffic to port 22 in remote host
 	python3 -m $(CONNECTION_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
