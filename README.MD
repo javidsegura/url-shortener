@@ -11,8 +11,7 @@
 ![Azure](https://img.shields.io/badge/cloud-azure-blue)
 ![Security](https://img.shields.io/badge/security-hardened-green)
 ![Monitoring](https://img.shields.io/badge/monitoring-grafana%2Bprometheus-yellow)
-![Tests](https://img.shields.io/badge/tests-85%25%20coverage-brightgreen)
-![CI/CD](https://img.shields.io/badge/ci%2Fcd-automated-success)
+
 
 # URL Shortener
 
