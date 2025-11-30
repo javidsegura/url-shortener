@@ -1,21 +1,222 @@
-![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)
-![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen.svg)
+[![CD - Deploy](https://github.com/javidsegura/url-shortener/actions/workflows/cd-deploy.yml/badge.svg)](https://github.com/javidsegura/url-shortener/actions/workflows/cd-deploy.yml)
+[![CI - Frontend](https://github.com/javidsegura/url-shortener/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/javidsegura/url-shortener/actions/workflows/ci-frontend.yml)
+[![CI - Backend](https://github.com/javidsegura/url-shortener/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/javidsegura/url-shortener/actions/workflows/ci-backend.yml)
+[![CI - Infra](https://github.com/javidsegura/url-shortener/actions/workflows/ci-infra.yml/badge.svg)](https://github.com/javidsegura/url-shortener/actions/workflows/ci-infra.yml)
+![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)
 ![React](https://img.shields.io/badge/frontend-react%4019.1.1-blue)
-![AWS](https://img.shields.io/badge/deploy-aws-orange)
+![Multi-Cloud](https://img.shields.io/badge/deploy-multi--cloud-purple)
+![AWS](https://img.shields.io/badge/cloud-aws-orange)
+![Azure](https://img.shields.io/badge/cloud-azure-blue)
+![Security](https://img.shields.io/badge/security-hardened-green)
+![Monitoring](https://img.shields.io/badge/monitoring-grafana%2Bprometheus-yellow)
+![Tests](https://img.shields.io/badge/tests-85%25%20coverage-brightgreen)
+![CI/CD](https://img.shields.io/badge/ci%2Fcd-automated-success)
 
 # URL Shortener
 
-A production-ready URL shortening service built with FastAPI, React, and deployed on AWS infrastructure.
-
-Deployment architecture:
-![Deployment Architecture](media/Deployment%20Architecture.drawio.png)
-
+A production-ready, enterprise-grade URL shortening service built with FastAPI and React, featuring multi-cloud deployment, comprehensive CI/CD automation, advanced security practices, and full observability.
 
 ## Overview
 
-This URL shortener provides a scalable solution for creating and managing shortened URLs. The system features a FastAPI backend with multiple shortening strategies, a React + TypeScript frontend, and automated infrastructure provisioning using Terraform and Ansible. It supports local development with hot-reloading and production deployment to AWS with containerized services.
+This URL shortener is a fully-featured, production-ready application that provides a scalable solution for creating and managing shortened URLs. The system has evolved from a basic URL shortening service to a comprehensive platform with **multi-cloud resilience** (AWS + Azure), **automated CI/CD pipelines**, **extensive test coverage** (85%+), **security hardening**, and **production monitoring**.
+
+### Key Features
+
+**Core Functionality**
+- FastAPI backend with multiple URL shortening strategies (Factory pattern)
+- React + TypeScript frontend with modern UI components
+- RESTful API with 10+ endpoints supporting full CRUD operations
+- Persistent storage using MySQL and cloud storage (S3/Azure Blob)
+- Redis caching for performance optimization
+- Firebase authentication integration
+
+**DevOps & Infrastructure**
+- **Multi-cloud deployment**: Primary production on Azure with AWS staging environment
+- **Complete CI/CD pipeline**: Automated testing, security scanning, and deployment
+- **Infrastructure as Code**: Terraform for provisioning, Ansible for configuration management
+- **Container orchestration**: Docker Compose with health checks and automatic rollback
+- **Environment synchronization**: Automated Terraform output injection into application configs
+- **Build optimization**: 87.5% faster builds using `uv` package manager with Docker layer caching
+
+**Security**
+- Environment variables and GitHub Secrets for credential management
+- Pre-commit hooks preventing private key commits
+- Static security analysis with Bandit
+- Secure random number generation using cryptography library
+- Network security groups and private subnets for database isolation
+- Two-layer security for monitoring access (SSH tunnel + authentication)
+
+**Testing & Quality**
+- **85%+ test coverage** with minimum 70% pipeline requirement
+- Unit, integration, regression, smoke, and load tests (k6)
+- Health check endpoints (`/ping`, `/dependencies`) for deployment validation
+- Pre-commit hooks for formatting, linting, and local test execution
+- Fail-fast CI pipeline with tiered testing stages
+
+**Monitoring & Observability**
+- Grafana dashboards with Prometheus metrics
+- Custom logging with enhanced event metadata
+- Health checks integrated into Docker services
+- Production telemetry for debugging and performance analysis
+
+**Developer Experience**
+- Hot-reload development environment
+- SSH tunnel scripts for production debugging
+- Modular architecture with clear separation of concerns
+- Comprehensive Makefile orchestration
+- GitHub Issues for centralized improvement tracking
+
+### Architecture Diagrams
+
+**CI/CD Pipeline Flow**
+```mermaid
+flowchart TB
+    subgraph CI["Continuous Integration (Every Push)"]
+        direction TB
+
+        A1[Push to branch] --> B1{Code path<br/>changed?}
+
+        B1 -->|Backend| C1[Stage 1: Fast Checks]
+        B1 -->|Frontend| C2[Format Check<br/>Prettier]
+        B1 -->|Infra| C3[Terraform Validate<br/>Format Check]
+
+        C1 --> D1[Ruff Lint + Format<br/>Bandit Security Scan]
+        D1 -->|✓ Pass| E1[Stage 2: Core Tests]
+        D1 -->|✗ Fail| F1[Block merge]
+
+        E1 --> G1[Unit Tests 70%+ coverage<br/>Smoke Tests]
+        G1 -->|✓ Pass| H1{PR to main?}
+        G1 -->|✗ Fail| F1
+
+        H1 -->|Yes| I1[Stage 3: Heavy Tests]
+        H1 -->|No| J1[Complete ✓]
+
+        I1 --> K1[Integration Tests<br/>Regression Tests<br/>Docker Environment]
+        K1 -->|✓ Pass| J1
+        K1 -->|✗ Fail| F1
+
+        C2 -->|✓ Pass| J1
+        C2 -->|✗ Fail| F1
+        C3 -->|✓ Pass| J1
+        C3 -->|✗ Fail| F1
+    end
+
+    subgraph CD["Continuous Delivery (Semantic Version Tag)"]
+        direction TB
+
+        A2[Push tag v*.*.* ] --> B2[Detect Changes<br/>git diff vs previous tag]
+
+        B2 --> C4{Infrastructure<br/>changed?}
+
+        C4 -->|Yes| D2[Full Deployment Path<br/>~10 minutes]
+        C4 -->|No| E2[App-Only Path<br/>~3 minutes]
+
+        D2 --> F2[Setup: Install deps<br/>Azure auth, secrets]
+        E2 --> F2
+
+        F2 --> G2[Create .env files<br/>Inject secrets]
+
+        G2 --> H2{Run Terraform?}
+
+        H2 -->|Yes| I2[Terraform Apply<br/>Provision Azure resources]
+        H2 -->|No| J2[Skip Terraform init]
+
+        I2 --> K2[Sync Outputs<br/>Python script]
+        J2 --> K2
+
+        K2 --> L2[Inject into:<br/>Backend .env<br/>Frontend .env<br/>Ansible inventory]
+
+        L2 --> M2[Build frontend<br/>npm run build]
+        M2 --> N2[Docker build + push<br/>Multi-platform<br/>Tag: env-version]
+
+        N2 --> O2[Ansible Playbook]
+
+        O2 --> P2[Copy files to VM<br/>Pull Docker images<br/>Deploy compose stack]
+
+        P2 --> Q2[Health Check<br/>/api/health/dependencies<br/>3 retries, 30s delay]
+
+        Q2 --> R2{Health OK?}
+
+        R2 -->|Yes| S2[Save tag to file<br/>Deployment complete ✓]
+        R2 -->|No| T2[Read previous tag<br/>Capture Docker logs]
+
+        T2 --> U2[Rollback deploy<br/>Previous version]
+        U2 --> V2[Fail pipeline ✗<br/>Show logs]
+    end
+
+    J1 -.->|Tag on main| A2
+
+    style F1 fill:#f8d7da
+    style J1 fill:#d4edda
+    style S2 fill:#d4edda
+    style V2 fill:#f8d7da
+    style C1 fill:#fff3cd
+    style E1 fill:#cfe2ff
+    style I1 fill:#d1e7dd
+    style D2 fill:#e1f5ff
+    style E2 fill:#fff4e1
+    style O2 fill:#d4edda
+```
+
+**Azure Production Architecture**
+```mermaid
+graph TB
+    subgraph "Azure Production Environment"
+        VNet[Virtual Network<br/>10.0.0.0/16]
+
+        subgraph "Public Subnet<br/>10.0.1.0/24"
+            VM[Application VM<br/>Docker Host]
+            PIP[Public IP<br/>SSH, HTTP, HTTPS]
+        end
+
+        subgraph "Private Subnet<br/>10.0.2.0/24"
+            MySQL[(MySQL Flexible Server<br/>Private endpoint)]
+        end
+
+        NSG[Network Security Group<br/>Ports: 22, 80, 443, 3000]
+        KV[Key Vault<br/>Database Credentials]
+        Storage[Azure Storage Account<br/>Blob Container]
+    end
+
+    subgraph "Remote State"
+        StateStorage[(Azure Storage<br/>Terraform State)]
+    end
+
+    subgraph "Outputs"
+        OUT1[Backend .env]
+        OUT2[Frontend .env]
+        OUT3[Ansible Inventory]
+    end
+
+    VNet --> VM
+    VNet --> MySQL
+    NSG --> VM
+    VM --> MySQL
+    VM -.->|Reads credentials| KV
+    VM -.->|Stores images| Storage
+    PIP --> VM
+
+    StateStorage -.->|State locking| VNet
+
+    VM -->|Sync script| OUT1
+    VM -->|Sync script| OUT2
+    VM -->|Sync script| OUT3
+
+    style VM fill:#4CAF50
+    style MySQL fill:#2196F3
+    style KV fill:#FF9800
+    style Storage fill:#9C27B0
+    style StateStorage fill:#607D8B
+```
+
+**Additional Architecture Resources**
+- [AWS Architecture Diagram](media/cloud-arch/aws.png)
+- [Full CI/CD Pipeline Diagram](media/ci-cd/full-pipeline.mmd)
+- [Azure Architecture Diagram](media/cloud-arch/azure.mmd)
+- [Deployment Architecture](media/Deployment%20Architecture.drawio.png)
+- [Project Reports](media/reports/)
 
 ## See extended documentation here
 [Extended documentation](https://deepwiki.com/javidsegura/url-shortener/2.2-local-development-setup)
