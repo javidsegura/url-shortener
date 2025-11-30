@@ -9,8 +9,8 @@ __pycache__/
 .venv/
 venv/
 env/
-secret.*
-
+src/url_shortener/core/clients/secret*.json
+secret.url-shortener-abadb-firebase-adminsdk-fbsvc-48d38c91f0.json
 # Build/dist
 build/
 dist/
@@ -44,4 +44,3 @@ src/database/migrations/versions/*__pycache__/
 # IDE
 .vscode/
 .idea/
-

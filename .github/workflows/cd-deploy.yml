@@ -178,6 +178,25 @@ jobs:
           chmod 600 ~/.ssh/ssh_key.pem
         shell: bash
 
+      - name: Create firebase credentials file
+        run: |
+          mkdir -p backend/src/url_shortener/core/clients/
+          cat <<'EOF' > backend/src/url_shortener/core/clients/secret.url-shortener-abadb-firebase-adminsdk-fbsvc-48d38c91f0.json
+          ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          EOF
+        shell: bash
+
+      - name: Verify firebase file exists
+        run: |
+          ls -la backend/src/url_shortener/core/clients/
+          if [ -f backend/src/url_shortener/core/clients/secret.url-shortener-abadb-firebase-adminsdk-fbsvc-48d38c91f0.json ]; then
+            echo "✓ Firebase credentials file exists"
+            head -n 3 backend/src/url_shortener/core/clients/secret.url-shortener-abadb-firebase-adminsdk-fbsvc-48d38c91f0.json
+          else
+            echo "✗ Firebase credentials file NOT found!"
+            exit 1
+          fi
+
       - name: Deploy without infrastructure
         run: make deploy-start
         env:

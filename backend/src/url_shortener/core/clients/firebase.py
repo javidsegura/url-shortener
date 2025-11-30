@@ -10,7 +10,6 @@ def initialize_firebase():
 	logger.debug("Initializing firebase...")
 
 	# 1. Check if we are in test mode or explicitly asking for the emulator
-	# We use .lower() == "true" to safely handle string booleans from .env files
 	env_is_test = os.getenv("ENVIRONMENT") == "test"
 	using_emulator = os.getenv("USING_FIREBASE_EMULATOR", "").lower() == "true"
 
