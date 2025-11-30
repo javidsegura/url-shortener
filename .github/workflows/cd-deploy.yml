@@ -142,6 +142,8 @@ jobs:
           CLOUD_PROVIDER="AZURE"
           AZURE_STORAGE_ACCOUNT_NAME="devshortenurl5mzn7gi4"
           AZURE_STORAGE_ACCOUNT_KEY="${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}"
+          GF_SECURITY_ADMIN_PASSWORD="${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}"
+
           EOF
 
           # --- FRONTEND ---

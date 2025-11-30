@@ -16,7 +16,7 @@ services:
       image: javidsegura/url_shortener_backend:${BACKEND_IMAGE_TAG}
       ports:
         - "8000:8000"
-      healthcheck: 
+      healthcheck:
         test: ["CMD", "curl", "-f", "http://${SERVER_PUBLIC_IP}:8000/api/health/dependencies"]
         interval: 30s
         timeout: 5s
@@ -30,7 +30,7 @@ services:
         - db-migration
   db-migration:
       image: javidsegura/url_shortener_backend:${BACKEND_IMAGE_TAG}
-  
+
   # Telemetry section
   prometheus:
     image: prom/prometheus:latest
@@ -42,13 +42,13 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-  
+
   grafana:
     image: grafana/grafana
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin # CHANGE THIS WHEN U LOG-IN FOR THE FIRST TIME
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_SECURITY_ADMIN_USER=admin
     volumes:
       - grafana_data:/var/lib/grafana
@@ -57,7 +57,7 @@ services:
     depends_on:
       prometheus:
         condition: service_started
-  
+
 volumes:
   prometheus_data:
   grafana_data:
