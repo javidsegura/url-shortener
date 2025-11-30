@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-md max-w-4xl mx-auto my-12">
       <h1 className="text-4xl font-bold text-gray-800 mb-4">
-        Welcome to our URL Shortener (2ND DEPLOYMENT -- PACO NO SE HA MATAO)
+        Welcome to our URL Shortener
       </h1>
       <p className="text-lg text-gray-600 text-center mb-8">
         Tired of long, clunky links? Our service helps you create short,

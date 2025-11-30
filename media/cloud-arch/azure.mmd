@@ -1,0 +1,47 @@
+graph TB
+    subgraph "Azure Production Environment"
+        VNet[Virtual Network<br/>10.0.0.0/16]
+
+        subgraph "Public Subnet<br/>10.0.1.0/24"
+            VM[Application VM<br/>Docker Host]
+            PIP[Public IP<br/>SSH, HTTP, HTTPS]
+        end
+
+        subgraph "Private Subnet<br/>10.0.2.0/24"
+            MySQL[(MySQL Flexible Server<br/>Private endpoint)]
+        end
+
+        NSG[Network Security Group<br/>Ports: 22, 80, 443, 3000]
+        KV[Key Vault<br/>Database Credentials]
+        Storage[Azure Storage Account<br/>Blob Container]
+    end
+
+    subgraph "Remote State"
+        StateStorage[(Azure Storage<br/>Terraform State)]
+    end
+
+    subgraph "Outputs"
+        OUT1[Backend .env]
+        OUT2[Frontend .env]
+        OUT3[Ansible Inventory]
+    end
+
+    VNet --> VM
+    VNet --> MySQL
+    NSG --> VM
+    VM --> MySQL
+    VM -.->|Reads credentials| KV
+    VM -.->|Stores images| Storage
+    PIP --> VM
+
+    StateStorage -.->|State locking| VNet
+
+    VM -->|Sync script| OUT1
+    VM -->|Sync script| OUT2
+    VM -->|Sync script| OUT3
+
+    style VM fill:#4CAF50
+    style MySQL fill:#2196F3
+    style KV fill:#FF9800
+    style Storage fill:#9C27B0
+    style StateStorage fill:#607D8B

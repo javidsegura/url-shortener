@@ -1,0 +1,86 @@
+flowchart TB
+    subgraph CI["Continuous Integration (Every Push)"]
+        direction TB
+
+        A1[Push to branch] --> B1{Code path<br/>changed?}
+
+        B1 -->|Backend| C1[Stage 1: Fast Checks]
+        B1 -->|Frontend| C2[Format Check<br/>Prettier]
+        B1 -->|Infra| C3[Terraform Validate<br/>Format Check]
+
+        C1 --> D1[Ruff Lint + Format<br/>Bandit Security Scan]
+        D1 -->|✓ Pass| E1[Stage 2: Core Tests]
+        D1 -->|✗ Fail| F1[Block merge]
+
+        E1 --> G1[Unit Tests 70%+ coverage<br/>Smoke Tests]
+        G1 -->|✓ Pass| H1{PR to main?}
+        G1 -->|✗ Fail| F1
+
+        H1 -->|Yes| I1[Stage 3: Heavy Tests]
+        H1 -->|No| J1[Complete ✓]
+
+        I1 --> K1[Integration Tests<br/>Regression Tests<br/>Docker Environment]
+        K1 -->|✓ Pass| J1
+        K1 -->|✗ Fail| F1
+
+        C2 -->|✓ Pass| J1
+        C2 -->|✗ Fail| F1
+        C3 -->|✓ Pass| J1
+        C3 -->|✗ Fail| F1
+    end
+
+    subgraph CD["Continuous Delivery (Semantic Version Tag)"]
+        direction TB
+
+        A2[Push tag v*.*.* ] --> B2[Detect Changes<br/>git diff vs previous tag]
+
+        B2 --> C4{Infrastructure<br/>changed?}
+
+        C4 -->|Yes| D2[Full Deployment Path<br/>~10 minutes]
+        C4 -->|No| E2[App-Only Path<br/>~3 minutes]
+
+        D2 --> F2[Setup: Install deps<br/>Azure auth, secrets]
+        E2 --> F2
+
+        F2 --> G2[Create .env files<br/>Inject secrets]
+
+        G2 --> H2{Run Terraform?}
+
+        H2 -->|Yes| I2[Terraform Apply<br/>Provision Azure resources]
+        H2 -->|No| J2[Skip Terraform init]
+
+        I2 --> K2[Sync Outputs<br/>Python script]
+        J2 --> K2
+
+        K2 --> L2[Inject into:<br/>Backend .env<br/>Frontend .env<br/>Ansible inventory]
+
+        L2 --> M2[Build frontend<br/>npm run build]
+        M2 --> N2[Docker build + push<br/>Multi-platform<br/>Tag: env-version]
+
+        N2 --> O2[Ansible Playbook]
+
+        O2 --> P2[Copy files to VM<br/>Pull Docker images<br/>Deploy compose stack]
+
+        P2 --> Q2[Health Check<br/>/api/health/dependencies<br/>3 retries, 30s delay]
+
+        Q2 --> R2{Health OK?}
+
+        R2 -->|Yes| S2[Save tag to file<br/>Deployment complete ✓]
+        R2 -->|No| T2[Read previous tag<br/>Capture Docker logs]
+
+        T2 --> U2[Rollback deploy<br/>Previous version]
+        U2 --> V2[Fail pipeline ✗<br/>Show logs]
+    end
+
+    J1 -.->|Tag on main| A2
+
+    style F1 fill:#f8d7da
+    style J1 fill:#d4edda
+    style S2 fill:#d4edda
+    style V2 fill:#f8d7da
+    style C1 fill:#fff3cd
+    style E1 fill:#cfe2ff
+    style I1 fill:#d1e7dd
+    style D2 fill:#e1f5ff
+    style E2 fill:#fff4e1
+    style O2 fill:#d4edda
