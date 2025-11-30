@@ -1,4 +1,6 @@
-.PHONY: help install up down output extract-db-credentials
+.PHONY: help install up down output extract-db-credentials connection-ssh connection-http connection-db connection-port connection-grafana connection-ssh-web-server connection-http-traffic-web-server
+
+SHELL := /bin/bash
 
 # Colors for output
 RED = \033[31m
@@ -12,6 +14,8 @@ RESET = \033[0m
 # VENV
 VENV = ./.venv
 VENV_ACTIVATE = source $(VENV)/bin/activate
+PYTHON = $(VENV)/bin/python
+UV = uv
 
 # DOTENVS
 BASE_BACKEND_ENV_FILE_PATH = ../backend/env_config/base/.env.$(ENVIRONMENT)
@@ -33,18 +37,24 @@ help: ## Show this help message
 
 
 start-remote-state: ## Starts remote state for terraform (S3)
-	cd $(TERRAFORM_SET_UP_PATH) && terraform init && terraform apply 
+	cd $(TERRAFORM_SET_UP_PATH) && terraform init && terraform apply
 destroy-remote-state: ## Stops remote state for terraform (S3)
 	cd $(TERRAFORM_SET_UP_PATH) && terraform destroy
 
-install: ## Initialize Terraform
-	python3.11 -m venv $(VENV)
-	pip3 install -r ./requirements.txt
+install: ## Initialize Terraform (Local Dev)
+	$(UV) venv $(VENV) --python 3.11
+	$(UV) pip install -r ./requirements.txt
 	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform init
 	brew install ansible
-	$(VENV_ACTIVATE) && pip install boto3 botocore
-	$(VENV_ACTIVATE) && ansible-galaxy install -r ./ansible/dependencies.yml
+	$(UV) pip install ansible
+	$(PYTHON) -m ansible.galaxy collection install -r ./ansible/dependencies.yml
+
+install-ci-cd: ## CI/CD Installation
+	$(UV) venv $(VENV) --python 3.11
+	$(UV) pip install -r ./requirements.txt
+	$(MAKE) check_enviroment_variables
+	ansible-galaxy install -r ./ansible/dependencies.yml
 
 
 
@@ -54,7 +64,7 @@ check: ## Apply Terraform configuration
 
 terraform-output:
 	$(MAKE) check_enviroment_variables
-	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform output 
+	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform output
 terraform-output-json:
 	$(MAKE) check_enviroment_variables
 	cd $(TERRAFORM_ENVIRONMENT_PATH) && terraform output -json
@@ -103,7 +113,8 @@ terraform-fmt-all: ## Format all Terraform files (for pre-commit, no credentials
 sync_backend_env: ## Inject tf outputs into backend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."
 	$(MAKE) check_enviroment_variables
-	python3 -m $(SYNC_SCRIPT_PATH) \
+	mkdir -p ../backend/env_config/synced
+	$(PYTHON) -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --backend-dotenv-path $(BASE_BACKEND_ENV_FILE_PATH)
@@ -111,7 +122,8 @@ sync_backend_env: ## Inject tf outputs into backend dotenv
 sync_frontend_env:  ## Inject tf outputs into frontend dotenv
 	@echo "Syncing Terraform outputs to backend .env..."
 	$(MAKE) check_enviroment_variables
-	python3 -m $(SYNC_SCRIPT_PATH) \
+	mkdir -p ../frontend/app/env_config/synced
+	$(PYTHON) -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --frontend-dotenv-path $(BASE_FRONTEND_ENV_FILE_PATH)
@@ -120,11 +132,12 @@ sync_frontend_env:  ## Inject tf outputs into frontend dotenv
 sync_ansible_inventory: ## ## Inject tf outputs into ansible
 	@echo "Syncing Terraform outputs to Ansible inventory..."
 	$(MAKE) check_enviroment_variables
-	python3 -m $(SYNC_SCRIPT_PATH) \
+	mkdir -p ansible/inventory
+	$(PYTHON) -m $(SYNC_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --ansible-inventory-path $(ANSIBLE_INVENTORY_FILE_PATH)
-sync_envs: 
+sync_envs:
 	$(MAKE) sync_backend_env
 	$(MAKE) sync_frontend_env
 sync_all: ## Syncs tf output in dotenvs (backend and frontend) and ansible
@@ -135,21 +148,47 @@ extract-db-credentials: ## Extract credentials from db
 	python3 -m scripts.resource_connections.extract_db_credentials \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH)
 
-connection-ssh-web-server: ## Send TCP traffic to port 22 in remote host 
-	python3 -m $(CONNECTION_SCRIPT_PATH) \
-	   --environment $(ENVIRONMENT) \
-	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
-	   --type-of-connection ssh
-connection-http-traffic-web-server: ## SSH tunnel between local HTTP port and instance HTTP port
-	python3 -m $(CONNECTION_SCRIPT_PATH) \
-	   --environment $(ENVIRONMENT) \
-	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
-	   --type-of-connection web-serving
-connection-db: ## SSH tunnel between local MySQL port and instance MySQL port
+
+connection-db: ## SSH tunnel for database (default: local 3307 -> remote 3306)
 	python3 -m $(CONNECTION_SCRIPT_PATH) \
 	   --environment $(ENVIRONMENT) \
 	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
 	   --type-of-connection db
+
+connection-ssh-web-server: ## Alias for connection-ssh
+	python3 -m $(CONNECTION_SCRIPT_PATH) \
+	   --environment $(ENVIRONMENT) \
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
+	   --type-of-connection ssh
+connection-http-traffic-web-server: ## Alias for connection-http
+	python3 -m $(CONNECTION_SCRIPT_PATH) \
+	   --environment $(ENVIRONMENT) \
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
+	   --type-of-connection web-serving
+
+connection-grafana: ## SSH tunnel for Grafana (defaults to port 3000, can override with LOCAL_PORT and REMOTE_PORT)
+	python3 -m $(CONNECTION_SCRIPT_PATH) \
+	   --environment $(ENVIRONMENT) \
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
+	   --type-of-connection grafana \
+	   $(if $(LOCAL_PORT),--local-port $(LOCAL_PORT),) \
+	   $(if $(REMOTE_PORT),--remote-port $(REMOTE_PORT),) \
+	   $(if $(TARGET_HOST),--target-host $(TARGET_HOST),)
+
+connection-port: ## Generic SSH tunnel for any port (requires LOCAL_PORT and REMOTE_PORT variables, optional TARGET_HOST)
+	@if [ -z "$(LOCAL_PORT)" ] || [ -z "$(REMOTE_PORT)" ]; then \
+		echo "Error: LOCAL_PORT and REMOTE_PORT must be defined"; \
+		echo "Usage: make connection-port LOCAL_PORT=3000 REMOTE_PORT=3000 [TARGET_HOST=hostname]"; \
+		exit 1; \
+	fi
+	python3 -m $(CONNECTION_SCRIPT_PATH) \
+	   --environment $(ENVIRONMENT) \
+	   --terraform-dir $(TERRAFORM_ENVIRONMENT_PATH) \
+	   --type-of-connection port \
+	   --local-port $(LOCAL_PORT) \
+	   --remote-port $(REMOTE_PORT) \
+	   $(if $(TARGET_HOST),--target-host $(TARGET_HOST),)
+
 
 check_enviroment_variables:
 	@if [ -z "$$ENVIRONMENT" ]; then \

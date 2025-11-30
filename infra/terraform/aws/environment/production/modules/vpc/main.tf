@@ -83,6 +83,12 @@ resource "aws_security_group" "web_app_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  ingress { # For Grafana - typically accessed via SSH tunnel, but rule added for flexibility
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   egress {
     from_port   = 0
     to_port     = 0
@@ -109,4 +115,3 @@ resource "aws_security_group" "database_sg" {
   }
 
 }
-

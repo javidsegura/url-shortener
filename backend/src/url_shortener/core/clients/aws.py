@@ -16,7 +16,9 @@ def initialize_aws_s3_client():
 	logger.debug("Initializing s3 client")
 	if not s3_client:
 		logger.debug("Instantiat s3 client for the first time")
-		s3_client = boto3.client("s3", region_name=os.getenv("AWS_MAIN_REGION"))
+		s3_client = boto3.client(
+			"s3", region_name=os.getenv("AWS_MAIN_REGION", "us-east-1")
+		)
 	return s3_client
 
 
