@@ -30,7 +30,8 @@ git clone https://github.com/javidsegura/url-shortener.git
 ### 1. Environment Variable Setup
 Before installing, set the **ENVIRONMENT** variable:
 ```bash
-export ENVIRONMENT=dev # or 'staging' or 'prod'
+export ENVIRONMENT=dev # or 'staging' or 'production'
+export CLOUD_PROVIDER=aws  # OR 'azure'
 ````
 
 This is validated by `Makefile:86-91` which exits with an error if **ENVIRONMENT** is undefined.
@@ -39,7 +40,11 @@ This is validated by `Makefile:86-91` which exits with an error if **ENVIRONMENT
 
 ### 2\. Install All Dependencies
 
-#### System Dependencies
+#### Prerequistes
+      - Python 3.11
+      - Docker and Docker Compose
+      - Node.js and npm
+      - Terraform and ansible
       - UV: "[how to install"](https://docs.astral.sh/uv/#installation)
       - K6: "[how to install"](https://grafana.com/docs/k6/latest/set-up/install-k6/)
 
@@ -106,29 +111,42 @@ You'll need to create and populate `.env` files for both the backend and fronten
 
 ### Backend
 
-1. Navigate to the directory `backend/env_config/base`.
+1. Navigate to the directory `backend/env_config/base` (create if not present).
 1.5. You will need to create `env_config` and `/base` and `/synced` inside it
 
-2. Create a new file named `.env.dev`.
+2. Create a new file named `.env.dev` (check the .env.dev.example or the other .env.*.example).
 
 3. Add the following variables to the file. You must set these to actual values before running the application, but for now, they are set to **empty strings** as placeholders.
-      ```
-      #REDIS
-      REDIS_URL="" #Usually "redis://redis:6379"
+      ```bash
+      # SET-UP
+      ENVIRONMENT="dev"
 
-      #DB
+      # REDIS
+      REDIS_URL="redis://redis:6379"
+
+      # DB
       MYSQL_USER=""
       MYSQL_PASSWORD=""
-      MYSQL_HOST=""
-      MYSQL_PORT=""
-      MYSQL_DATABASE=""
-      MYSQL_SYNC_DRIVER="" # Usually "mysqlql+pymsql"
-      MYSQL_ASYNC_DRIVER="" # Usually "mysql+aiomysql"
+      MYSQL_HOST="database"
+      MYSQL_PORT="3306"
+      MYSQL_DATABASE="url_shortener"
+      MYSQL_SYNC_DRIVER="mysql+pymysql"
+      MYSQL_ASYNC_DRIVER="mysql+aiomysql"
 
-      #AWS
+
+      # 4) CLOUD
+      CLOUD_PROVIDER=""
+
+      # AWS
       AWS_ACCESS_KEY_ID=""
       AWS_SECRET_ACCESS_KEY=""
       AWS_MAIN_REGION=""
+
+      # AZURE
+      AZURE_STORAGE_ACCOUNT_NAME=""
+      AZURE_STORAGE_ACCOUNT_KEY=""
+
+      ## TERRAFORM OUTPUTS:
       ```
 4. Navigate to `src/url_shortener/core/clients/`
 5. Create file titled `secret.url-shortener-abadb-firebase-adminsdk-fbsvc-48d38c91f0.json` and fill in with your firebase credentials
@@ -138,32 +156,48 @@ You'll need to create and populate `.env` files for both the backend and fronten
 1. Go to the frontend directory: `frontend/app/env_config/base`. \
 1.5. You will need to create `env_config` and `/base` and `/synced` inside it
 
-2. Create a new file named `.env.dev`.
+2. Create a new file named `.env.dev` (also create those for other stages: `.env.production` and `.env.staging` if not present).
 
 3. **Note:** The file must exist at this path, but for the initial setup, you **do not need to fill in any environmental variables** inside it.
 
 ### Infra
-1. Go to infra file: `infra/terraform/environment/dev/terraform.tfvars`
-2. Fill in the following variables:
-```bash
-environment="dev"
-main_region="" # E.g., us-east-1
-
-```
+1. Go to infra file: `infra/terraform/{cloud_provider}/environment/{environment}/terraform.tfvars`  (create if not existent)
+2. Fill in the variables defined in  `infra/terraform/{cloud_provider}/environment/{environment}/variables.tf`
 
 ### 3. Start app locally
 ```bash
 
 # For all of these commands you need the docker daemon to be running in the background!
 make dev-start # Starts the entire local dev environment
-dev-stop # Kills the entire local dev environment
-dev-restart-docker-compose # Useful for debugging backend/frontend with hot reloading
+make dev-stop # Kills the entire local dev environment
+make dev-restart-docker-compose # Useful for debugging backend/frontend with hot reloading
+make dev-start-infra # Start infra for dev
+make # Help comand explaining all make tasks
 ```
 
 ### 4. Run tests with:
 ```bash
-make -C backend pytest-run # Coverage will appear in stdout
+# 1)
+cd backend
+
+# 2)
+make test-start: ## Stats docker compose for integration tests
+make test-stop: ## Stops docker compose for integration tests of endpoints
+make unit-test: ## Run all unit tests with coverage
+make integration-test: ## Runn all integration tests
+make regression-test: ## Run all regression tests
+make smoke-test: ## Run all smoke endpoint tests
+make load-tests: ## Run load tests with k6
 ```
+## Production set-up
+### For Automatic Deployment use the CI/CD (create a tag for automatic deployment)
+### For manual deployment
+#### 1) Set-up environmental variables
+Fill up .env.production.example
+#### 2) Do az login in the command
+#### 3) Run `deploy-start` or `deploy-start-with-infra` wether you need the infra deployed as well
+
+
 
 # ENTIRE TECH STACK
 Based on the codebase analysis, here is the tech stack used in the URL shortener project:
@@ -204,8 +238,6 @@ Based on the codebase analysis, here is the tech stack used in the URL shortener
 - **Ruff** (Python linting/formatting) [26](#1-25)
 - **Pre-commit** (git hooks) [27](#1-26)
 
-## Notes
-The project follows a microservices architecture with separate backend (Python/FastAPI) and frontend (React/TypeScript) applications. The infrastructure is containerized using Docker and can be orchestrated with Docker Compose. For production deployments, the project uses Terraform for AWS infrastructure provisioning (including RDS for the MySQL database) and Ansible for configuration management.
 
 ### Citations
 

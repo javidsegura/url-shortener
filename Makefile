@@ -104,13 +104,6 @@ deploy-stop: ## Stop development environment
 	$(MAKE) -C infra terraform-stop ENVIRONMENT="$(ENVIRONMENT)"
 	$(MAKE) delete_ci_artifacts
 
-# 4) Tests set-up
-test-start: ## Stats docker compose for integration tests of endpoints
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f deployment/docker-compose.yml -f deployment/docker-compose.test.yml -p $(PROJECT_NAME) up --build
-
-test-stop: ## Stops docker compose for integration tests of endpoints
-	BACKEND_ENV_FILE=$(BACKEND_ENV_FILE_SYNCED_PATH) docker compose -f deployment/docker-compose.yml -f deployment/docker-compose.test.yml -p $(PROJECT_NAME) down -v
-
 # 5) Uitls function
 delete_ci_artifacts:
 	rm -rf $(BACKEND_ENV_FILE_SYNCED_PATH)

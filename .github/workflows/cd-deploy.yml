@@ -5,6 +5,7 @@ on:
     tags:
       - 'v*.*.*'
 
+
 env:
   ENVIRONMENT: production
   CLOUD_PROVIDER: azure
@@ -51,6 +52,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: check-changes
+    environment: production
 
     steps:
       - uses: actions/checkout@v4
