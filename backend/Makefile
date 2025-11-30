@@ -128,7 +128,7 @@ pytest-run:
 
 unit-test: ## Run all unit tests with coverage
 	@echo "$(YELLOW)Running all tests...$(RESET)"
-	$(VENV_ACTIVATE) && python3 -m pytest test/unit/ -v --cov=src/url_shortener --cov-report=term --cov-fail-under=70
+	$(VENV_ACTIVATE) && python3 -m pytest test/unit/ -v --cov=src/url_shortener --cov-report=term --cov-report=xml --cov-fail-under=70
 
 integration-test: ## Runn all integration tests
 	$(VENV_ACTIVATE) && python3 -m pytest -s -vv test/integration/
