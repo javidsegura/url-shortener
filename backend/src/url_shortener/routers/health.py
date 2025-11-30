@@ -42,7 +42,7 @@ async def cheeck_backend_health_dependencies_endpoint(
 	try:
 		db_connected = await test_db_connection(db=db)
 		if not db_connected:
-			raise Exception("Database connection failed")
+			raise Exception("Database connection failed!")
 		checks["checks"]["db"] = "ok"
 	except Exception as e:
 		checks["status"] = "unhealthy"
