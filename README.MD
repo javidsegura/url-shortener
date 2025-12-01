@@ -396,6 +396,8 @@ make load-tests: ## Run load tests with k6
 Fill up .env.production.example
 #### 2) Do az login in the command
 #### 3) Run `deploy-start` or `deploy-start-with-infra` wether you need the infra deployed as well
+#### 4) If you want to access the web server and connect to the db or grafana via ssh tunnel: a) make sure you have `infra/terraform/azure/environment/production/secrets/ssh_key.pem` populated with the proper credentials (shared by email), b) run `make -C infra connection-grafana` or `make -C infra connection-db` or `make -C infra connection-ssh-web-server`
+
 
 
 
