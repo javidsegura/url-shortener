@@ -338,13 +338,10 @@ You'll need to create and populate `.env` files for both the backend and fronten
       CLOUD_PROVIDER=""
 
       # AWS
-      AWS_ACCESS_KEY_ID=""
-      AWS_SECRET_ACCESS_KEY=""
       AWS_MAIN_REGION=""
 
       # AZURE
       AZURE_STORAGE_ACCOUNT_NAME=""
-      AZURE_STORAGE_ACCOUNT_KEY=""
 
       ## TERRAFORM OUTPUTS:
       ```
